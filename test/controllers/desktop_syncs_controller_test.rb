@@ -12,8 +12,8 @@ class DesktopSyncsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "uses the DB-stored session key with Importer.run" do
-    Setting.instance.update!(claude_ai_session_key: "sk-from-db")
+  test "uses the DB-stored session key and user-agent with Importer.run" do
+    Setting.instance.update!(claude_ai_session_key: "sk-from-db", claude_ai_user_agent: "Mozilla/5.0 (from db)")
     calls = []
     with_importer_stub(->(**kwargs) {
       calls << kwargs
@@ -25,6 +25,7 @@ class DesktopSyncsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to root_path
     assert_equal "sk-from-db", calls.first[:session_key], "DB value should win over env"
+    assert_equal "Mozilla/5.0 (from db)", calls.first[:user_agent]
   end
 
   test "falls back to the env key when nothing is stored" do

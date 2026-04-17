@@ -8,6 +8,10 @@ class Setting < ApplicationRecord
     instance.claude_ai_session_key.presence || ENV["CLAUDE_AI_SESSION_KEY"].presence
   end
 
+  def self.claude_ai_user_agent
+    instance.claude_ai_user_agent.presence || ENV["CLAUDE_AI_USER_AGENT"].presence
+  end
+
   def self.source_of_session_key
     if instance.claude_ai_session_key.present?
       :database

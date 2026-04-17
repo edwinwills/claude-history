@@ -29,23 +29,40 @@
     <% end %>
   </div>
 
-  <%= form_with model: @setting, url: setting_path, method: :patch, class: "flex flex-col gap-3" do |f| %>
-    <%= f.label :claude_ai_session_key, "Cookie", class: "text-sm font-medium" %>
-    <%= f.text_area :claude_ai_session_key,
-          value: @setting.claude_ai_session_key,
-          rows: 4,
-          placeholder: "Either the full Cookie header (sessionKey=…; cf_clearance=…; …) or just the sessionKey value",
-          autocomplete: "off",
-          spellcheck: false,
-          class: "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring break-all" %>
+  <%= form_with model: @setting, url: setting_path, method: :patch, class: "flex flex-col gap-4" do |f| %>
+    <div class="flex flex-col gap-2">
+      <%= f.label :claude_ai_session_key, "Cookie", class: "text-sm font-medium" %>
+      <%= f.text_area :claude_ai_session_key,
+            value: @setting.claude_ai_session_key,
+            rows: 4,
+            placeholder: "Full Cookie header from DevTools — e.g. sessionKey=sk-ant-sid01-…; cf_clearance=…; …",
+            autocomplete: "off",
+            spellcheck: false,
+            class: "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring break-all" %>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <%= f.label :claude_ai_user_agent, "User-Agent", class: "text-sm font-medium" %>
+      <%= f.text_field :claude_ai_user_agent,
+            value: @setting.claude_ai_user_agent,
+            placeholder: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 …",
+            autocomplete: "off",
+            spellcheck: false,
+            class: "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+      <p class="text-xs text-muted-foreground">
+        Must match the browser where you copied the cookie — Cloudflare binds <code class="font-mono">cf_clearance</code>
+        to User-Agent, so a mismatch triggers a 403 even with a fresh cookie.
+      </p>
+    </div>
+
     <div class="flex gap-2">
       <%= f.submit "Save",
             class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
-      <% if @setting.claude_ai_session_key.present? %>
+      <% if @setting.claude_ai_session_key.present? || @setting.claude_ai_user_agent.present? %>
         <%= button_to "Clear",
               setting_path,
               method: :delete,
-              form: { data: { turbo_confirm: "Remove the stored cookie?" }, class: "inline" },
+              form: { data: { turbo_confirm: "Remove the stored claude.ai credentials?" }, class: "inline" },
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-border bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors" %>
       <% end %>
     </div>
@@ -61,13 +78,15 @@
     <code class="font-mono">cf_clearance</code>, and any org cookies together.
   </p>
 
-  <h3 class="font-semibold mb-1">Recommended: copy the full Cookie header</h3>
+  <h3 class="font-semibold mb-1">Recommended: copy Cookie + User-Agent from DevTools</h3>
   <ol class="list-decimal pl-5 text-sm space-y-2 mb-5">
     <li>Open <a href="https://claude.ai" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai</a> and sign in. Open any conversation so API calls are happening.</li>
     <li>Open DevTools (<code class="font-mono">⌘⌥I</code> macOS / <code class="font-mono">Ctrl+Shift+I</code> others) and go to the <strong>Network</strong> tab. Filter by <strong>Fetch/XHR</strong>.</li>
     <li>Click any request under <code class="font-mono">claude.ai</code> whose path starts with <code class="font-mono">/api/…</code> (e.g. <code class="font-mono">chat_conversations</code>).</li>
-    <li>In the right pane, open <strong>Headers</strong> → <strong>Request Headers</strong>, find the <code class="font-mono">Cookie</code> row, and copy its entire value (long string of <code class="font-mono">name=value; name=value; …</code>).</li>
-    <li>Paste it into the field above and save.</li>
+    <li>In the right pane, open <strong>Headers</strong> → <strong>Request Headers</strong>.</li>
+    <li>Copy the entire value of the <code class="font-mono">Cookie</code> row → paste into the <strong>Cookie</strong> field above.</li>
+    <li>Copy the entire value of the <code class="font-mono">User-Agent</code> row from the same request → paste into the <strong>User-Agent</strong> field above. (This must match, or Cloudflare's cookie binding will reject the request.)</li>
+    <li>Save.</li>
   </ol>
 
   <details class="text-sm">

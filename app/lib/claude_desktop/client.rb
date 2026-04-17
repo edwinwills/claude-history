@@ -8,8 +8,11 @@ module ClaudeDesktop
   # These endpoints are not a public contract; treat breakage as expected.
   class Client
     BASE = "https://claude.ai".freeze
-    # Cloudflare in front of claude.ai aggressively 403s non-browser User-Agents.
-    USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36".freeze
+    # Cloudflare's cf_clearance cookie is bound to the client's IP *and* User-Agent.
+    # If the UA we send differs from the browser that earned the clearance, the
+    # cookie is invalidated and Cloudflare challenges again. The default below
+    # is only a fallback — prefer passing the UA from the settings page.
+    DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36".freeze
 
     class Error < StandardError; end
     class AuthError < Error; end
@@ -17,9 +20,10 @@ module ClaudeDesktop
     class RateLimited < Error; end
     class NetworkError < Error; end
 
-    def initialize(session_key:, base: BASE, http: nil, logger: nil)
+    def initialize(session_key:, user_agent: nil, base: BASE, http: nil, logger: nil)
       raise ArgumentError, "session_key is required" if session_key.to_s.strip.empty?
       @session_key = session_key
+      @user_agent = user_agent.to_s.strip.presence || DEFAULT_USER_AGENT
       @base = base
       @http = http
       @logger = logger
@@ -47,7 +51,7 @@ module ClaudeDesktop
       uri = URI.join(@base, path)
       req = Net::HTTP::Get.new(uri)
       req["Cookie"] = format_cookie(@session_key)
-      req["User-Agent"] = USER_AGENT
+      req["User-Agent"] = @user_agent
       req["Accept"] = "application/json"
       req["Accept-Language"] = "en-US,en;q=0.9"
       req["Referer"] = "https://claude.ai/"

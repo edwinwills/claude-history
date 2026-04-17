@@ -7,7 +7,7 @@ class DesktopSyncsController < ApplicationController
       return
     end
 
-    summary = ClaudeDesktop::Importer.run(session_key: session_key)
+    summary = ClaudeDesktop::Importer.run(session_key: session_key, user_agent: Setting.claude_ai_user_agent)
     flash[:notice] = "Desktop sync complete: #{summary}"
     redirect_to request.referer.presence || root_path
   rescue ClaudeDesktop::Client::ChallengedError => e

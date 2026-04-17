@@ -18,7 +18,7 @@ class SettingsController < ApplicationController
   private
 
   def setting_params
-    params.require(:setting).permit(:claude_ai_session_key).transform_values do |v|
+    params.require(:setting).permit(:claude_ai_session_key, :claude_ai_user_agent).transform_values do |v|
       v.is_a?(String) ? v.strip : v
     end
   end

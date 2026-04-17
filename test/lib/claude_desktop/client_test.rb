@@ -37,6 +37,20 @@ class ClaudeDesktop::ClientTest < ActiveSupport::TestCase
     assert_equal "sessionKey=abc", client.send(:format_cookie, "  abc\n")
   end
 
+  test "user_agent defaults but accepts override" do
+    default = ClaudeDesktop::Client.new(session_key: "sk")
+    assert_equal ClaudeDesktop::Client::DEFAULT_USER_AGENT, default.instance_variable_get(:@user_agent)
+
+    custom = "Mozilla/5.0 something-else"
+    custom_client = ClaudeDesktop::Client.new(session_key: "sk", user_agent: custom)
+    assert_equal custom, custom_client.instance_variable_get(:@user_agent)
+  end
+
+  test "user_agent with blank falls back to default" do
+    c = ClaudeDesktop::Client.new(session_key: "sk", user_agent: "  ")
+    assert_equal ClaudeDesktop::Client::DEFAULT_USER_AGENT, c.instance_variable_get(:@user_agent)
+  end
+
   test "passes org + conversation ids in the paths" do
     calls = []
     http = ->(path) { calls << path; [] }

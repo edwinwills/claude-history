@@ -13,8 +13,8 @@ module ClaudeDesktop
       end
     end
 
-    def self.run(session_key: ENV["CLAUDE_AI_SESSION_KEY"], client: nil, logger: Rails.logger)
-      client ||= Client.new(session_key: session_key, logger: logger)
+    def self.run(session_key: ENV["CLAUDE_AI_SESSION_KEY"], user_agent: nil, client: nil, logger: Rails.logger)
+      client ||= Client.new(session_key: session_key, user_agent: user_agent, logger: logger)
       new(client: client, logger: logger).run
     end
 
