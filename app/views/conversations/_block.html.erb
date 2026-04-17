@@ -1,6 +1,10 @@
 <% case block["type"] %>
 <% when "text" %>
-  <%= render_markdown(block["text"].to_s) %>
+  <% if unsupported_placeholder_text?(block["text"]) %>
+    <%= unsupported_block_notice %>
+  <% else %>
+    <%= render_markdown(block["text"].to_s) %>
+  <% end %>
 <% when "thinking" %>
   <details class="my-2 rounded-md border border-border bg-muted/30 overflow-hidden">
     <summary class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground select-none">thinking</summary>
