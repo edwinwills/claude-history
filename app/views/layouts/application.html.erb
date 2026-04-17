@@ -53,8 +53,15 @@
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" %>
         <%= link_to "Trash", trash_path,
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" %>
+        <%= link_to "Settings", setting_path,
+              class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" %>
         <%= button_to "Sync", sync_path, method: :post,
+              title: "Import conversations from ~/.claude/projects",
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
+              form_class: "m-0" %>
+        <%= button_to "Sync Desktop", desktop_sync_path, method: :post,
+              title: "Import conversations from claude.ai (needs CLAUDE_AI_SESSION_KEY)",
+              class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors",
               form_class: "m-0" %>
       </div>
     </header>
@@ -63,6 +70,13 @@
       <div class="max-w-6xl mx-auto w-full px-4 pt-3">
         <div class="rounded-lg border border-border bg-card text-card-foreground px-4 py-3 text-sm">
           <%= flash[:notice] %>
+        </div>
+      </div>
+    <% end %>
+    <% if flash[:alert] %>
+      <div class="max-w-6xl mx-auto w-full px-4 pt-3">
+        <div class="rounded-lg border border-destructive/50 text-destructive px-4 py-3 text-sm">
+          <%= flash[:alert] %>
         </div>
       </div>
     <% end %>
