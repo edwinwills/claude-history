@@ -3,6 +3,6 @@ namespace :history do
   task sync: :environment do
     puts "Scanning #{ClaudeHistory::Importer::DEFAULT_ROOT}…"
     summary = ClaudeHistory::Importer.run(logger: Logger.new($stdout))
-    puts summary.to_s
+    puts summary
   end
 end
