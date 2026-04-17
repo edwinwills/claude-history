@@ -18,25 +18,61 @@
 
   <%= form_with url: desktop_imports_path, method: :post, multipart: true, class: "flex flex-wrap items-center gap-2" do |f| %>
     <%= f.file_field :archive,
-          accept: ".zip,application/zip",
+          accept: ".zip,.json,application/zip,application/json",
           required: true,
           class: "flex-1 min-w-[240px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-primary/90 text-sm text-muted-foreground" %>
     <%= f.submit "Upload and process",
           class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
   <% end %>
+  <p class="text-xs text-muted-foreground mt-2">Accepts <code class="font-mono">.zip</code> (official export) or <code class="font-mono">.json</code> (produced by the bookmarklet below).</p>
+</div>
+
+<% bookmarklet_js = <<~'JS'.squish
+  javascript:(async()=>{const f=(u)=>fetch(u,{credentials:'include'}).then(r=>r.json());try{const orgs=await f('/api/organizations');const out=[];let total=0,done=0;for(const o of orgs){const cs=await f(`/api/organizations/${o.uuid}/chat_conversations`);total+=cs.length}for(const o of orgs){const cs=await f(`/api/organizations/${o.uuid}/chat_conversations`);for(const c of cs){done++;document.title=`[${done}/${total}] Claude export…`;try{out.push(await f(`/api/organizations/${o.uuid}/chat_conversations/${c.uuid}?tree=True&rendering_mode=messages`))}catch(e){console.error('conv',c.uuid,e)}}}const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='claude-export.json';document.body.appendChild(a);a.click();URL.revokeObjectURL(u);alert(`Exported ${out.length} of ${total} conversations to claude-export.json`)}catch(e){alert('Export failed: '+e.message)}})()
+JS
+%>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-2">Option A — official export (.zip)</h2>
+  <ol class="list-decimal pl-5 text-sm space-y-2">
+    <li>Open <a href="https://claude.ai/settings/data-privacy-controls" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai → Settings → Data controls</a> (formerly "Privacy").</li>
+    <li>Click <strong>Export data</strong>. Claude emails you a link once the export is ready.</li>
+    <li>Download the ZIP from the email link and upload it above.</li>
+  </ol>
+  <p class="text-xs text-muted-foreground mt-3">
+    Anthropic's sanctioned path — stable, but <strong>Team accounts often hide this</strong> for non-admin members.
+    If you don't see the Export data button, use Option B.
+  </p>
 </div>
 
 <div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
-  <h2 class="text-lg font-semibold mb-2">How to get the export</h2>
-  <ol class="list-decimal pl-5 text-sm space-y-2">
-    <li>Open <a href="https://claude.ai/settings/data-privacy-controls" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai → Settings → Privacy</a>.</li>
-    <li>Click <strong>Export data</strong>. Claude emails you a link once the export is ready (usually within a few minutes, sometimes longer for heavy accounts).</li>
-    <li>Download the ZIP from the email link.</li>
-    <li>Upload it here.</li>
-  </ol>
-  <p class="text-xs text-muted-foreground mt-3">
-    This is Anthropic's sanctioned export path, so it's stable and won't break when claude.ai updates its internal APIs.
+  <h2 class="text-lg font-semibold mb-2">Option B — browser bookmarklet (.json)</h2>
+  <p class="text-sm text-muted-foreground mb-3">
+    For Team/Enterprise accounts where the export UI is hidden: a one-line bookmarklet that runs in your
+    browser's claude.ai tab, fetches your own conversations using your logged-in session, and downloads
+    <code class="font-mono">claude-export.json</code> to your disk. Cloudflare / TLS fingerprinting isn't an
+    issue because the request originates from your actual browser.
   </p>
+  <ol class="list-decimal pl-5 text-sm space-y-2 mb-3">
+    <li>Show your bookmarks bar (<code class="font-mono">⌘⇧B</code> / <code class="font-mono">Ctrl+Shift+B</code>).</li>
+    <li>Drag the blue button below onto it:
+      <div class="mt-2">
+        <a href="<%= bookmarklet_js %>"
+           onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar — don\\'t click it here.')"
+           class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 cursor-grab">
+          📥 Export Claude → JSON
+        </a>
+      </div>
+    </li>
+    <li>Open <a href="https://claude.ai" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai</a> and sign in. Wait for the page to fully load.</li>
+    <li>Click the bookmarklet. The tab title updates with progress (<code class="font-mono">[N/M] Claude export…</code>); for large histories this may take a minute or two.</li>
+    <li>A file named <code class="font-mono">claude-export.json</code> downloads. Upload it above.</li>
+  </ol>
+  <details class="text-sm">
+    <summary class="cursor-pointer text-muted-foreground">Can't drag? Copy the code and create a bookmark manually</summary>
+    <p class="text-muted-foreground mt-2">Create a new bookmark, set the URL to the following, pointed at any name:</p>
+    <textarea readonly rows="4" class="w-full mt-2 rounded-md border border-input bg-background p-2 text-xs font-mono break-all"><%= bookmarklet_js %></textarea>
+  </details>
 </div>
 
 <h2 class="text-lg font-semibold tracking-tight mb-2">Past imports</h2>

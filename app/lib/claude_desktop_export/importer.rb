@@ -35,7 +35,7 @@ module ClaudeDesktopExport
         return @record
       end
 
-      conversations = @record.archive.open { |file| extract_conversations_json(file) }
+      conversations = @record.archive.open { |file| extract_conversations(file) }
       project = Project.find_or_create_by!(path: PROJECT_PATH) { |p| p.name = PROJECT_NAME }
 
       conversations.each do |conv|
@@ -59,18 +59,30 @@ module ClaudeDesktopExport
 
     private
 
-    def extract_conversations_json(file)
-      body = nil
+    def extract_conversations(file)
+      filename = @record.archive.filename.to_s
+      if filename.downcase.end_with?(".json")
+        parse_conversations_json(file.read)
+      else
+        body = read_conversations_from_zip(file)
+        parse_conversations_json(body)
+      end
+    end
+
+    def read_conversations_from_zip(file)
       Zip::File.open(file.path) do |zip|
         entry = zip.glob("conversations.json").first || zip.glob("**/conversations.json").first
         raise InvalidExport, "conversations.json not found in the uploaded ZIP" if entry.nil?
-        body = entry.get_input_stream.read
+        return entry.get_input_stream.read
       end
+    rescue Zip::Error => e
+      raise InvalidExport, "couldn't read ZIP (#{e.class}: #{e.message})"
+    end
+
+    def parse_conversations_json(body)
       data = JSON.parse(body)
       raise InvalidExport, "conversations.json is not a JSON array" unless data.is_a?(Array)
       data
-    rescue Zip::Error => e
-      raise InvalidExport, "couldn't read ZIP (#{e.class}: #{e.message})"
     rescue JSON::ParserError => e
       raise InvalidExport, "conversations.json is not valid JSON (#{e.message})"
     end
