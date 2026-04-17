@@ -21,4 +21,26 @@ class ApplicationHelperTest < ActionView::TestCase
     html = source_badge("something-weird")
     assert_includes html, "Something Weird"
   end
+
+  test "unsupported_placeholder_text? matches the claude.ai fallback text" do
+    assert unsupported_placeholder_text?("```\nThis block is not supported on your current device yet.\n```")
+    assert unsupported_placeholder_text?("prefix This block is not supported on your current device yet. suffix")
+    assert_not unsupported_placeholder_text?("hello world")
+    assert_not unsupported_placeholder_text?(nil)
+  end
+
+  test "unsupported_block_notice renders a muted notice" do
+    html = unsupported_block_notice
+    assert_includes html, "Unsupported content"
+    assert_includes html, "border-dashed"
+    assert_includes html, "italic"
+  end
+
+  test "snippet_around does not return a snippet dominated by the placeholder" do
+    text = "```\nThis block is not supported on your current device yet.\n```\nbut I found FOO here"
+    snippet = snippet_around(text, "FOO")
+    assert_includes snippet, "FOO"
+    assert_includes snippet, "[unsupported content]"
+    assert_not_includes snippet, "current device yet"
+  end
 end
