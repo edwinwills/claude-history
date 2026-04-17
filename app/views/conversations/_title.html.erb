@@ -41,6 +41,7 @@
     <% when :inline %>
       <span class="reveal-on-hover inline-flex items-center gap-1">
         <%= link_to conversation.display_title, conversation_path(conversation),
+              data: { turbo_frame: "_top" },
               class: "link link-hover truncate max-w-xl inline-block align-middle" %>
         <%= link_to "✎", edit_url,
               data: { turbo_frame: frame_id },

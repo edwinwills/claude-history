@@ -2,7 +2,9 @@
   <div class="flex flex-wrap items-center gap-2">
     <% conversation.labels.alphabetical.each do |label| %>
       <div class="badge badge-<%= label.color_class %> gap-1.5 pl-3 pr-1.5 h-7 hover:brightness-90 transition">
-        <%= link_to label.name, root_path(label: label.name), class: "font-medium" %>
+        <%= link_to label.name, root_path(label: label.name),
+              data: { turbo_frame: "_top" },
+              class: "font-medium" %>
         <%= button_to "✕",
               conversation_label_path(conversation, label),
               method: :delete,
