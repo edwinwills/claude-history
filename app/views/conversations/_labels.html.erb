@@ -1,17 +1,17 @@
 <%= turbo_frame_tag "conversation_labels_#{conversation.id}", class: "block" do %>
   <div class="flex flex-wrap items-center gap-2">
-    <span class="text-xs uppercase tracking-wide opacity-60">Labels:</span>
+    <span class="text-xs uppercase tracking-wide opacity-60 mr-1">Labels:</span>
 
     <% conversation.labels.alphabetical.each do |label| %>
-      <span class="badge badge-<%= label.color_class %> gap-1">
-        <%= link_to label.name, root_path(label: label.name), class: "hover:underline" %>
+      <div class="badge badge-<%= label.color_class %> gap-1.5 pl-3 pr-1.5 h-7">
+        <%= link_to label.name, root_path(label: label.name), class: "font-medium hover:underline" %>
         <%= button_to "✕",
               conversation_label_path(conversation, label),
               method: :delete,
-              form: { data: { turbo_frame: "conversation_labels_#{conversation.id}" }, class: "inline" },
-              class: "opacity-70 hover:opacity-100 ml-0.5",
+              form: { data: { turbo_frame: "conversation_labels_#{conversation.id}" }, style: "display:contents" },
+              class: "opacity-60 hover:opacity-100 cursor-pointer text-sm leading-none",
               title: "Remove label" %>
-      </span>
+      </div>
     <% end %>
 
     <%= form_with url: conversation_labels_path(conversation),
