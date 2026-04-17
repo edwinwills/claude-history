@@ -1,0 +1,91 @@
+<% content_for :title, "Import — Claude History" %>
+
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Import Desktop</span>
+</nav>
+
+<h1 class="text-2xl font-semibold tracking-tight mb-4">Import claude.ai export</h1>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-1">Upload ZIP</h2>
+  <p class="text-sm text-muted-foreground mb-4">
+    Drop the ZIP file you received from claude.ai's data export. Only <code class="font-mono">conversations.json</code>
+    is read; re-uploading the same export is safe — conversations are deduplicated by their UUID and
+    updated only when newer.
+  </p>
+
+  <%= form_with url: desktop_imports_path, method: :post, multipart: true, class: "flex flex-wrap items-center gap-2" do |f| %>
+    <%= f.file_field :archive,
+          accept: ".zip,application/zip",
+          required: true,
+          class: "flex-1 min-w-[240px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-primary/90 text-sm text-muted-foreground" %>
+    <%= f.submit "Upload and process",
+          class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
+  <% end %>
+</div>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-2">How to get the export</h2>
+  <ol class="list-decimal pl-5 text-sm space-y-2">
+    <li>Open <a href="https://claude.ai/settings/data-privacy-controls" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai → Settings → Privacy</a>.</li>
+    <li>Click <strong>Export data</strong>. Claude emails you a link once the export is ready (usually within a few minutes, sometimes longer for heavy accounts).</li>
+    <li>Download the ZIP from the email link.</li>
+    <li>Upload it here.</li>
+  </ol>
+  <p class="text-xs text-muted-foreground mt-3">
+    This is Anthropic's sanctioned export path, so it's stable and won't break when claude.ai updates its internal APIs.
+  </p>
+</div>
+
+<h2 class="text-lg font-semibold tracking-tight mb-2">Past imports</h2>
+
+<% if @imports.empty? %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-6 text-center text-muted-foreground">
+    No imports yet.
+  </div>
+<% else %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left font-medium px-4 py-3">When</th>
+            <th class="text-left font-medium px-4 py-3">File</th>
+            <th class="text-left font-medium px-4 py-3">Status</th>
+            <th class="text-right font-medium px-4 py-3">Seen</th>
+            <th class="text-right font-medium px-4 py-3">Created</th>
+            <th class="text-right font-medium px-4 py-3">Updated</th>
+            <th class="text-right font-medium px-4 py-3">Skipped</th>
+            <th class="text-right font-medium px-4 py-3">Errors</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <% @imports.each do |import| %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2 text-muted-foreground" title="<%= import.created_at %>"><%= relative_time(import.created_at) %></td>
+              <td class="px-4 py-2"><code class="text-xs font-mono"><%= import.filename %></code>
+                <% if import.byte_size %><span class="text-xs text-muted-foreground ml-1">(<%= number_to_human_size(import.byte_size) %>)</span><% end %>
+              </td>
+              <td class="px-4 py-2">
+                <% if import.succeeded? %>
+                  <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">succeeded</span>
+                <% elsif import.failed? %>
+                  <span class="inline-flex items-center rounded-full bg-destructive/20 text-destructive px-2 py-0.5 text-xs" title="<%= import.error_detail %>">failed</span>
+                <% else %>
+                  <span class="inline-flex items-center rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-xs"><%= import.status %></span>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_seen %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_created %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_updated %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_skipped %></td>
+              <td class="px-4 py-2 text-right <%= 'text-destructive' if import.error_count.positive? %>"><%= import.error_count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

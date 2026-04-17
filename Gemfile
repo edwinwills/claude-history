@@ -43,6 +43,9 @@ gem "image_processing", "~> 1.2"
 # Markdown rendering for conversation text blocks
 gem "redcarpet", "~> 3.6"
 
+# Reading claude.ai export ZIP files
+gem "rubyzip", "~> 2.3", require: "zip"
+
 # Tailwind + shadcn UI components
 gem "tailwindcss-rails", "~> 3.3"
 gem "shadcn-ui"
