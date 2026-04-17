@@ -22,6 +22,7 @@
         <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
           <tr>
             <th class="text-left font-medium px-4 py-3">Title</th>
+            <th class="text-left font-medium px-4 py-3">Source</th>
             <th class="text-left font-medium px-4 py-3">Project</th>
             <th class="text-right font-medium px-4 py-3">Messages</th>
             <th class="text-left font-medium px-4 py-3">Deleted</th>
@@ -32,6 +33,7 @@
           <% @conversations.each do |c| %>
             <tr class="hover:bg-muted/40">
               <td class="px-4 py-2 text-muted-foreground"><%= c.display_title %></td>
+              <td class="px-4 py-2"><%= source_badge(c.source, size: :sm) %></td>
               <td class="px-4 py-2"><%= link_to c.project.name, project_path(c.project), class: "text-primary hover:underline" %></td>
               <td class="px-4 py-2 text-right text-muted-foreground"><%= c.message_count %></td>
               <td class="px-4 py-2 text-muted-foreground" title="<%= c.deleted_at %>"><%= relative_time(c.deleted_at) %></td>

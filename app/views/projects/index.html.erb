@@ -1,10 +1,22 @@
 <% content_for :title, "Projects — Claude History" %>
 
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <% source_preserve = { label: params[:label] }.compact %>
+  <% [ [ nil, "All" ], [ "code", "Code" ], [ "desktop", "Desktop" ] ].each do |value, label| %>
+    <% active = (@active_source || nil) == value %>
+    <%= link_to root_path(source_preserve.merge(source: value)),
+          class: "inline-flex items-center rounded-md border px-3 h-8 text-xs font-medium transition-colors #{active ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'}" do %>
+      <%= label %>
+    <% end %>
+  <% end %>
+</div>
+
 <% if @all_labels.any? || @active_label %>
   <div class="flex flex-wrap items-center gap-2 mb-4">
+    <% label_preserve = { source: @active_source }.compact %>
     <% @all_labels.each do |label| %>
       <% active = @active_label&.id == label.id %>
-      <%= link_to root_path(label: (active ? nil : label.name)),
+      <%= link_to root_path(label_preserve.merge(label: (active ? nil : label.name))),
             class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white transition hover:brightness-110 #{active ? 'ring-2 ring-ring ring-offset-2 ring-offset-background' : 'opacity-70 hover:opacity-100'}",
             style: "background-color: #{label.color_with_default}" do %>
         <span><%= label.name %></span>
@@ -12,7 +24,7 @@
       <% end %>
     <% end %>
     <% if @active_label %>
-      <%= link_to "clear ✕", root_path, class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
+      <%= link_to "clear ✕", root_path(label_preserve), class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
     <% end %>
   </div>
 <% end %>
@@ -38,6 +50,7 @@
           <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
               <th class="text-left font-medium px-4 py-3">Title</th>
+              <th class="text-left font-medium px-4 py-3">Source</th>
               <th class="text-left font-medium px-4 py-3">Project</th>
               <th class="text-left font-medium px-4 py-3">Labels</th>
               <th class="text-right font-medium px-4 py-3">Messages</th>
@@ -48,6 +61,7 @@
             <% @labeled_conversations.each do |c| %>
               <tr class="hover:bg-muted/40">
                 <td class="px-4 py-2"><%= render "conversations/title", conversation: c, editing: false, variant: :inline %></td>
+                <td class="px-4 py-2"><%= source_badge(c.source, size: :sm) %></td>
                 <td class="px-4 py-2"><%= link_to c.project.name, project_path(c.project), class: "text-primary hover:underline" %></td>
                 <td class="px-4 py-2">
                   <div class="flex flex-wrap gap-1">
@@ -88,6 +102,7 @@
           <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
               <th class="text-left font-medium px-4 py-3">Project</th>
+              <th class="text-left font-medium px-4 py-3">Source</th>
               <th class="text-left font-medium px-4 py-3">Path</th>
               <th class="text-right font-medium px-4 py-3">Sessions</th>
               <th class="text-left font-medium px-4 py-3">Last activity</th>
@@ -97,7 +112,14 @@
             <% @projects.each do |project| %>
               <tr class="hover:bg-muted/40">
                 <td class="px-4 py-2"><%= link_to project.name, project_path(project), class: "font-medium text-primary hover:underline" %></td>
-                <td class="px-4 py-2"><code class="text-xs text-muted-foreground font-mono"><%= project.path %></code></td>
+                <td class="px-4 py-2"><%= source_badge(project.source, size: :sm) %></td>
+                <td class="px-4 py-2">
+                  <% if project.desktop? %>
+                    <span class="text-xs text-muted-foreground italic">(from claude.ai export)</span>
+                  <% else %>
+                    <code class="text-xs text-muted-foreground font-mono"><%= project.path %></code>
+                  <% end %>
+                </td>
                 <td class="px-4 py-2 text-right"><span class="text-muted-foreground"><%= project.conversation_count %></span></td>
                 <td class="px-4 py-2 text-muted-foreground" title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
               </tr>
