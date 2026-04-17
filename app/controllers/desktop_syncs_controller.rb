@@ -11,7 +11,9 @@ class DesktopSyncsController < ApplicationController
     flash[:notice] = "Desktop sync complete: #{summary}"
     redirect_to request.referer.presence || root_path
   rescue ClaudeDesktop::Client::AuthError => e
-    redirect_to(request.referer.presence || root_path, alert: e.message)
+    redirect_to(setting_path, alert: e.message)
+  rescue ClaudeDesktop::Client::NetworkError => e
+    redirect_to(request.referer.presence || root_path, alert: "Desktop sync network error: #{e.message}")
   rescue ClaudeDesktop::Client::Error => e
     redirect_to(request.referer.presence || root_path, alert: "Desktop sync failed: #{e.message}")
   end

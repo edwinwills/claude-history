@@ -7,12 +7,13 @@ module ClaudeDesktop
   # Auth is a session cookie (the `sessionKey` cookie set by claude.ai on login).
   # These endpoints are not a public contract; treat breakage as expected.
   class Client
-    BASE = "https://api.claude.ai".freeze
+    BASE = "https://claude.ai".freeze
     USER_AGENT = "Mozilla/5.0 (claude-history/1.0)".freeze
 
     class Error < StandardError; end
     class AuthError < Error; end
     class RateLimited < Error; end
+    class NetworkError < Error; end
 
     def initialize(session_key:, base: BASE, http: nil)
       raise ArgumentError, "session_key is required" if session_key.to_s.strip.empty?
@@ -60,6 +61,9 @@ module ClaudeDesktop
       else
         raise Error, "claude.ai returned #{res.code} for #{path}: #{res.body.to_s[0, 200]}"
       end
+    rescue Socket::ResolutionError, Errno::ECONNREFUSED, Errno::ETIMEDOUT,
+           Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
+      raise NetworkError, "couldn't reach claude.ai (#{e.class}: #{e.message})"
     end
   end
 end

@@ -17,6 +17,10 @@ class ClaudeDesktop::ClientTest < ActiveSupport::TestCase
     assert_equal [ "/api/organizations" ], calls
   end
 
+  test "BASE targets claude.ai (not api.claude.ai — that host doesn't resolve)" do
+    assert_equal "https://claude.ai", ClaudeDesktop::Client::BASE
+  end
+
   test "passes org + conversation ids in the paths" do
     calls = []
     http = ->(path) { calls << path; [] }

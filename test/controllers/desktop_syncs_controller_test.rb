@@ -40,14 +40,25 @@ class DesktopSyncsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "sk-env-only", calls.first[:session_key]
   end
 
-  test "auth errors surface as a flash alert" do
+  test "auth errors redirect to Settings with a flash alert" do
     Setting.instance.update!(claude_ai_session_key: "sk-expired")
     with_importer_stub(->(**) { raise ClaudeDesktop::Client::AuthError, "session expired" }) do
       post desktop_sync_path
     end
-    assert_redirected_to root_path
+    assert_redirected_to setting_path
     follow_redirect!
     assert_match(/session expired/, response.body)
+  end
+
+  test "network errors surface as a flash alert" do
+    Setting.instance.update!(claude_ai_session_key: "sk-ok")
+    with_importer_stub(->(**) { raise ClaudeDesktop::Client::NetworkError, "DNS down" }) do
+      post desktop_sync_path
+    end
+    assert_redirected_to root_path
+    follow_redirect!
+    assert_match(/network error/, response.body)
+    assert_match(/DNS down/, response.body)
   end
 
   private
