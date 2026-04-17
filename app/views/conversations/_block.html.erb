@@ -2,30 +2,27 @@
 <% when "text" %>
   <%= render_markdown(block["text"].to_s) %>
 <% when "thinking" %>
-  <div class="collapse collapse-arrow bg-base-200/40 my-2">
-    <input type="checkbox" />
-    <div class="collapse-title text-xs opacity-70">thinking</div>
-    <div class="collapse-content"><pre class="tool-body"><%= block["thinking"].to_s %></pre></div>
-  </div>
+  <details class="my-2 rounded-md border border-border bg-muted/30 overflow-hidden">
+    <summary class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground select-none">thinking</summary>
+    <div class="px-3 py-2 border-t border-border"><pre class="tool-body"><%= block["thinking"].to_s %></pre></div>
+  </details>
 <% when "tool_use" %>
-  <div class="collapse collapse-arrow bg-base-200/40 my-2">
-    <input type="checkbox" />
-    <div class="collapse-title text-xs">
-      <span class="badge badge-primary badge-xs mr-1">tool_use</span>
+  <details class="my-2 rounded-md border border-border bg-muted/30 overflow-hidden">
+    <summary class="cursor-pointer px-3 py-1.5 text-xs select-none">
+      <span class="inline-flex items-center rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-[10px] font-medium mr-1">tool_use</span>
       <span class="font-mono"><%= block["name"] %></span>
-      <span class="opacity-60 font-mono ml-2"><%= truncate_plain(block["input"].to_json.to_s, 140) %></span>
-    </div>
-    <div class="collapse-content"><pre class="tool-body"><%= JSON.pretty_generate(block["input"] || {}) %></pre></div>
-  </div>
+      <span class="text-muted-foreground font-mono ml-2"><%= truncate_plain(block["input"].to_json.to_s, 140) %></span>
+    </summary>
+    <div class="px-3 py-2 border-t border-border"><pre class="tool-body"><%= JSON.pretty_generate(block["input"] || {}) %></pre></div>
+  </details>
 <% when "tool_result" %>
   <% inner = block["content"] %>
-  <div class="collapse collapse-arrow bg-base-200/40 my-2">
-    <input type="checkbox" />
-    <div class="collapse-title text-xs">
-      <span class="badge badge-secondary badge-xs mr-1">tool_result</span>
-      <span class="opacity-60 font-mono"><%= truncate_plain(ClaudeHistory::RecordParser.flatten_content(inner), 140) %></span>
-    </div>
-    <div class="collapse-content">
+  <details class="my-2 rounded-md border border-border bg-muted/30 overflow-hidden">
+    <summary class="cursor-pointer px-3 py-1.5 text-xs select-none">
+      <span class="inline-flex items-center rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-[10px] font-medium mr-1">tool_result</span>
+      <span class="text-muted-foreground font-mono"><%= truncate_plain(ClaudeHistory::RecordParser.flatten_content(inner), 140) %></span>
+    </summary>
+    <div class="px-3 py-2 border-t border-border">
       <% if inner.is_a?(Array) %>
         <% inner.each do |sub| %>
           <%= render "conversations/block", block: sub %>
@@ -34,11 +31,12 @@
         <pre class="tool-body"><%= inner.to_s %></pre>
       <% end %>
     </div>
-  </div>
+  </details>
 <% else %>
-  <div class="collapse collapse-arrow bg-base-200/40 my-2">
-    <input type="checkbox" />
-    <div class="collapse-title text-xs"><span class="badge badge-ghost badge-xs mr-1"><%= block["type"] %></span></div>
-    <div class="collapse-content"><pre class="tool-body"><%= JSON.pretty_generate(block) %></pre></div>
-  </div>
+  <details class="my-2 rounded-md border border-border bg-muted/30 overflow-hidden">
+    <summary class="cursor-pointer px-3 py-1.5 text-xs select-none">
+      <span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-medium mr-1"><%= block["type"] %></span>
+    </summary>
+    <div class="px-3 py-2 border-t border-border"><pre class="tool-body"><%= JSON.pretty_generate(block) %></pre></div>
+  </details>
 <% end %>

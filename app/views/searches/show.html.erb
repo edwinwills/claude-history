@@ -1,43 +1,42 @@
 <% content_for :title, "Search — Claude History" %>
 
-<h1 class="text-2xl font-semibold mb-3">Search</h1>
+<h1 class="text-2xl font-semibold tracking-tight mb-3">Search</h1>
 
 <%= form_with url: search_path, method: :get, local: true, class: "flex gap-2 mb-6" do |f| %>
-  <%= f.search_field :q, value: @query, placeholder: "Search all conversations…",
-        autofocus: true, class: "input input-bordered flex-1" %>
-  <%= f.submit "Search", class: "btn btn-primary" %>
+  <%= f.search_field :q, value: @query, placeholder: "Search all conversations…", autofocus: true,
+        class: "flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+  <%= f.submit "Search",
+        class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
 <% end %>
 
 <% if @query.blank? %>
-  <div class="card bg-base-100 shadow-sm"><div class="card-body items-center">
-    <p class="opacity-70">Type a query to search across all message text.</p>
-  </div></div>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
+    Type a query to search across all message text.
+  </div>
 <% elsif @results.empty? %>
-  <div class="card bg-base-100 shadow-sm"><div class="card-body items-center">
-    <p class="opacity-70">No matches for <strong><%= @query %></strong>.</p>
-  </div></div>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
+    No matches for <strong class="text-foreground"><%= @query %></strong>.
+  </div>
 <% else %>
-  <p class="text-sm opacity-70 mb-4"><%= @match_count %> matches across <%= @results.size %> conversations</p>
+  <p class="text-sm text-muted-foreground mb-4"><%= @match_count %> matches across <%= @results.size %> conversations</p>
   <div class="flex flex-col gap-4">
     <% @results.each do |conversation, messages| %>
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body p-4">
-          <h2 class="card-title text-base">
-            <%= link_to conversation.display_title, conversation_path(conversation), class: "link link-hover" %>
-            <span class="text-xs opacity-60 font-normal">· <%= conversation.project.name %> · <%= relative_time(conversation.last_activity_at) %></span>
-          </h2>
-          <div class="flex flex-col gap-2 mt-2">
-            <% messages.each do |message| %>
-              <div class="bg-base-200 rounded p-2">
-                <div class="flex items-center gap-2 text-xs opacity-70 mb-1">
-                  <span class="badge <%= message.role == 'user' ? 'badge-success' : 'badge-info' %> badge-sm"><%= message.role %></span>
-                  <span><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>
-                  <%= link_to "jump →", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "link link-hover ml-auto" %>
-                </div>
-                <div class="text-sm whitespace-pre-wrap break-words"><%= snippet_around(message.text_content, @query) %></div>
+      <div class="rounded-lg border border-border bg-card text-card-foreground p-4">
+        <h2 class="font-semibold">
+          <%= link_to conversation.display_title, conversation_path(conversation), class: "text-primary hover:underline" %>
+          <span class="text-xs text-muted-foreground font-normal">· <%= conversation.project.name %> · <%= relative_time(conversation.last_activity_at) %></span>
+        </h2>
+        <div class="flex flex-col gap-2 mt-2">
+          <% messages.each do |message| %>
+            <div class="bg-muted/40 rounded p-2">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide <%= message.role == 'user' ? 'bg-primary/20 text-primary' : 'bg-secondary text-secondary-foreground' %>"><%= message.role %></span>
+                <span><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>
+                <%= link_to "jump →", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "text-primary hover:underline ml-auto" %>
               </div>
-            <% end %>
-          </div>
+              <div class="text-sm whitespace-pre-wrap break-words text-foreground"><%= snippet_around(message.text_content, @query) %></div>
+            </div>
+          <% end %>
         </div>
       </div>
     <% end %>

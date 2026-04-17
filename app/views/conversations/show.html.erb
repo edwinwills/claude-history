@@ -1,48 +1,51 @@
 <% content_for :title, "#{@conversation.display_title} — Claude History" %>
 
-<div class="text-sm breadcrumbs opacity-70 mb-2">
-  <ul>
-    <li><%= link_to "Projects", root_path %></li>
-    <li><%= link_to @project.name, project_path(@project) %></li>
-    <li>Session</li>
-  </ul>
-</div>
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <%= link_to @project.name, project_path(@project), class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Session</span>
+</nav>
 
 <%= render "conversations/title", conversation: @conversation, editing: false, variant: :heading %>
 
-<div class="flex flex-wrap gap-4 text-sm opacity-70 mb-4">
-  <span>Branch: <% if @conversation.git_branch.present? %><code class="font-mono"><%= @conversation.git_branch %></code><% else %>—<% end %></span>
+<div class="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+  <span>Branch: <% if @conversation.git_branch.present? %><code class="font-mono text-foreground"><%= @conversation.git_branch %></code><% else %>—<% end %></span>
   <span>Started: <%= @conversation.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
   <span>Messages: <%= @conversation.message_count %></span>
-  <span>Session: <code class="font-mono"><%= @conversation.session_id %></code></span>
+  <span>Session: <code class="font-mono text-foreground"><%= @conversation.session_id %></code></span>
 </div>
 
 <div class="mb-4">
   <%= render "conversations/labels", conversation: @conversation %>
 </div>
 
-<div class="card bg-base-100 shadow-sm mb-6" data-controller="clipboard">
-  <div class="card-body p-4">
-    <div class="text-xs uppercase tracking-wide opacity-60 mb-1">Resume in a new terminal</div>
-    <div class="flex gap-2 items-center">
-      <code class="flex-1 font-mono text-sm bg-base-200 rounded px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
-      <button type="button" class="btn btn-primary btn-sm" data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
-    </div>
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6" data-controller="clipboard">
+  <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Resume in a new terminal</div>
+  <div class="flex gap-2 items-center">
+    <code class="flex-1 font-mono text-sm bg-muted/40 rounded px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
+    <button type="button"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
   </div>
 </div>
 
 <div class="flex flex-col gap-3">
   <% @messages.each do |message| %>
-    <div class="chat <%= message.role == 'user' ? 'chat-end' : 'chat-start' %>" id="msg-<%= message.uuid %>">
-      <div class="chat-header opacity-60 text-xs mb-1">
-        <%= message.role %>
-        <time class="ml-1"><%= message.timestamp&.strftime("%H:%M:%S") %></time>
-      </div>
-      <div class="chat-bubble <%= message.role == 'user' ? 'chat-bubble-success' : 'chat-bubble-info' %> max-w-3xl">
-        <div class="markdown-body">
-          <% message.content_blocks.each do |block| %>
-            <%= render "conversations/block", block: block %>
-          <% end %>
+    <% is_user = message.role == 'user' %>
+    <div class="flex <%= is_user ? 'justify-end' : 'justify-start' %>" id="msg-<%= message.uuid %>">
+      <div class="max-w-3xl w-fit">
+        <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1 <%= 'justify-end' if is_user %>">
+          <span class="uppercase tracking-wide"><%= message.role %></span>
+          <span><%= message.timestamp&.strftime("%H:%M:%S") %></span>
+        </div>
+        <div class="rounded-lg px-4 py-3 border <%= is_user ? 'bg-primary/10 border-primary/30' : 'bg-card border-border' %>">
+          <div class="markdown-body text-sm">
+            <% message.content_blocks.each do |block| %>
+              <%= render "conversations/block", block: block %>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>

@@ -5,58 +5,58 @@
     <% @all_labels.each do |label| %>
       <% active = @active_label&.id == label.id %>
       <%= link_to root_path(label: (active ? nil : label.name)),
-            class: "badge badge-md badge-#{label.color_class} #{'badge-soft' unless active} gap-1.5 hover:brightness-90 transition" do %>
-        <span class="font-medium"><%= label.name %></span>
-        <span class="opacity-70 text-xs"><%= label.conversations.size %></span>
+            class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors #{active ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/70 border border-border'}" do %>
+        <span><%= label.name %></span>
+        <span class="opacity-70"><%= label.conversations.size %></span>
       <% end %>
     <% end %>
     <% if @active_label %>
-      <%= link_to "clear ✕", root_path, class: "btn btn-ghost btn-xs ml-1" %>
+      <%= link_to "clear ✕", root_path, class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
     <% end %>
   </div>
 <% end %>
 
 <% if @active_label %>
   <div class="flex items-baseline justify-between mb-4">
-    <h1 class="text-2xl font-semibold">
+    <h1 class="text-2xl font-semibold tracking-tight">
       Conversations labeled
-      <span class="badge badge-<%= @active_label.color_class %> align-middle text-base"><%= @active_label.name %></span>
+      <span class="inline-flex items-center rounded-full bg-primary text-primary-foreground px-2.5 py-0.5 text-base font-medium ml-1"><%= @active_label.name %></span>
     </h1>
-    <div class="text-sm opacity-70"><%= @labeled_conversations.size %> conversation<%= 's' unless @labeled_conversations.size == 1 %></div>
+    <div class="text-sm text-muted-foreground"><%= @labeled_conversations.size %> conversation<%= 's' unless @labeled_conversations.size == 1 %></div>
   </div>
 
   <% if @labeled_conversations.empty? %>
-    <div class="card bg-base-100 shadow-sm"><div class="card-body items-center">
-      <p class="opacity-70">No conversations with this label.</p>
-    </div></div>
+    <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
+      No conversations with this label.
+    </div>
   <% else %>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
+        <table class="w-full text-sm">
+          <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
-              <th>Title</th>
-              <th>Project</th>
-              <th>Labels</th>
-              <th class="text-right">Messages</th>
-              <th>Last activity</th>
+              <th class="text-left font-medium px-4 py-3">Title</th>
+              <th class="text-left font-medium px-4 py-3">Project</th>
+              <th class="text-left font-medium px-4 py-3">Labels</th>
+              <th class="text-right font-medium px-4 py-3">Messages</th>
+              <th class="text-left font-medium px-4 py-3">Last activity</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-border">
             <% @labeled_conversations.each do |c| %>
-              <tr class="hover">
-                <td><%= render "conversations/title", conversation: c, editing: false, variant: :inline %></td>
-                <td><%= link_to c.project.name, project_path(c.project), class: "link link-hover" %></td>
-                <td>
+              <tr class="hover:bg-muted/40">
+                <td class="px-4 py-2"><%= render "conversations/title", conversation: c, editing: false, variant: :inline %></td>
+                <td class="px-4 py-2"><%= link_to c.project.name, project_path(c.project), class: "text-primary hover:underline" %></td>
+                <td class="px-4 py-2">
                   <div class="flex flex-wrap gap-1">
                     <% c.labels.alphabetical.each do |l| %>
                       <%= link_to l.name, root_path(label: l.name),
-                            class: "badge badge-sm badge-#{l.color_class} #{'badge-soft' if l.id != @active_label.id} hover:brightness-90 transition" %>
+                            class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs transition-colors #{l.id == @active_label.id ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/70'}" %>
                     <% end %>
                   </div>
                 </td>
-                <td class="text-right"><span class="badge badge-ghost"><%= c.message_count %></span></td>
-                <td class="opacity-70 text-sm" title="<%= c.last_activity_at %>"><%= relative_time(c.last_activity_at) %></td>
+                <td class="px-4 py-2 text-right"><span class="text-muted-foreground"><%= c.message_count %></span></td>
+                <td class="px-4 py-2 text-muted-foreground" title="<%= c.last_activity_at %>"><%= relative_time(c.last_activity_at) %></td>
               </tr>
             <% end %>
           </tbody>
@@ -66,45 +66,37 @@
   <% end %>
 <% else %>
   <div class="flex items-baseline justify-between mb-4">
-    <h1 class="text-2xl font-semibold">Projects</h1>
-    <div class="stats stats-horizontal bg-base-100 shadow-sm">
-      <div class="stat px-6 py-3">
-        <div class="stat-title text-xs">Projects</div>
-        <div class="stat-value text-xl"><%= @projects.size %></div>
-      </div>
-      <div class="stat px-6 py-3">
-        <div class="stat-title text-xs">Conversations</div>
-        <div class="stat-value text-xl"><%= @total_conversations %></div>
-      </div>
+    <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
+    <div class="flex gap-4 text-sm text-muted-foreground">
+      <div><span class="font-medium text-foreground"><%= @projects.size %></span> projects</div>
+      <div><span class="font-medium text-foreground"><%= @total_conversations %></span> conversations</div>
     </div>
   </div>
 
   <% if @projects.empty? %>
-    <div class="card bg-base-100 shadow-sm">
-      <div class="card-body items-center text-center">
-        <p class="opacity-70">No conversations indexed yet.</p>
-        <p class="text-sm opacity-70">Click <span class="badge badge-primary">Sync</span> to scan <code class="font-mono">~/.claude/projects</code>.</p>
-      </div>
+    <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center">
+      <p class="text-muted-foreground">No conversations indexed yet.</p>
+      <p class="text-sm text-muted-foreground mt-1">Click <span class="inline-flex items-center rounded-full bg-primary text-primary-foreground px-2.5 py-0.5 text-xs">Sync</span> to scan <code class="font-mono">~/.claude/projects</code>.</p>
     </div>
   <% else %>
-    <div class="card bg-base-100 shadow-sm">
+    <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
+        <table class="w-full text-sm">
+          <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
-              <th>Project</th>
-              <th>Path</th>
-              <th class="text-right">Sessions</th>
-              <th>Last activity</th>
+              <th class="text-left font-medium px-4 py-3">Project</th>
+              <th class="text-left font-medium px-4 py-3">Path</th>
+              <th class="text-right font-medium px-4 py-3">Sessions</th>
+              <th class="text-left font-medium px-4 py-3">Last activity</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-border">
             <% @projects.each do |project| %>
-              <tr class="hover">
-                <td><%= link_to project.name, project_path(project), class: "link link-hover font-medium" %></td>
-                <td><code class="text-xs opacity-60"><%= project.path %></code></td>
-                <td class="text-right"><span class="badge badge-ghost"><%= project.conversation_count %></span></td>
-                <td class="opacity-70 text-sm" title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
+              <tr class="hover:bg-muted/40">
+                <td class="px-4 py-2"><%= link_to project.name, project_path(project), class: "font-medium text-primary hover:underline" %></td>
+                <td class="px-4 py-2"><code class="text-xs text-muted-foreground font-mono"><%= project.path %></code></td>
+                <td class="px-4 py-2 text-right"><span class="text-muted-foreground"><%= project.conversation_count %></span></td>
+                <td class="px-4 py-2 text-muted-foreground" title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
               </tr>
             <% end %>
           </tbody>

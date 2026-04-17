@@ -13,39 +13,48 @@
       <%= f.text_field :custom_title,
             value: (conversation.custom_title.presence || conversation.display_title),
             autofocus: true,
-            class: (variant == :inline ? "input input-bordered input-sm w-64" : "input input-bordered input-md text-xl font-semibold w-full max-w-xl"),
+            class: (variant == :inline ?
+              "flex h-8 rounded-md border border-input bg-background px-2 py-1 text-sm w-64 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" :
+              "flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 py-1 text-xl font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"),
             data: { controller: "title-edit", action: "keydown.esc->title-edit#cancel" } %>
-      <%= f.submit "Save", class: (variant == :inline ? "btn btn-primary btn-xs" : "btn btn-primary btn-sm") %>
+      <%= f.submit "Save",
+            class: (variant == :inline ?
+              "inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-2.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" :
+              "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors") %>
       <%= link_to "Cancel", display_url,
             data: { turbo_frame: frame_id },
-            class: (variant == :inline ? "btn btn-ghost btn-xs" : "btn btn-ghost btn-sm") %>
+            class: (variant == :inline ?
+              "inline-flex items-center justify-center rounded-md text-xs h-8 px-2.5 hover:bg-accent hover:text-accent-foreground transition-colors text-muted-foreground" :
+              "inline-flex items-center justify-center rounded-md text-sm h-9 px-3 hover:bg-accent hover:text-accent-foreground transition-colors text-muted-foreground") %>
       <% if conversation.custom_title.present? %>
         <%= button_to "Reset",
               conversation_path(conversation),
               method: :patch,
               params: { conversation: { custom_title: "" }, variant: variant },
               form: { data: { turbo_frame: frame_id }, class: "inline" },
-              class: (variant == :inline ? "btn btn-outline btn-xs" : "btn btn-outline btn-sm") %>
+              class: (variant == :inline ?
+                "inline-flex items-center justify-center rounded-md text-xs h-8 px-2.5 border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors" :
+                "inline-flex items-center justify-center rounded-md text-sm h-9 px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors") %>
       <% end %>
     <% end %>
   <% else %>
     <% case variant %>
     <% when :heading %>
       <div class="reveal-on-hover flex items-center gap-2 my-1">
-        <h1 class="text-2xl font-semibold"><%= conversation.display_title %></h1>
+        <h1 class="text-2xl font-semibold tracking-tight"><%= conversation.display_title %></h1>
         <%= link_to "✎", edit_url,
               data: { turbo_frame: frame_id },
-              class: "edit-icon btn btn-ghost btn-sm btn-square",
+              class: "edit-icon inline-flex items-center justify-center rounded-md h-8 w-8 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
               title: "Rename" %>
       </div>
     <% when :inline %>
       <span class="reveal-on-hover inline-flex items-center gap-1">
         <%= link_to conversation.display_title, conversation_path(conversation),
               data: { turbo_frame: "_top" },
-              class: "link link-hover truncate max-w-xl inline-block align-middle" %>
+              class: "truncate max-w-xl inline-block align-middle text-primary hover:underline" %>
         <%= link_to "✎", edit_url,
               data: { turbo_frame: frame_id },
-              class: "edit-icon btn btn-ghost btn-xs btn-square",
+              class: "edit-icon inline-flex items-center justify-center rounded-md h-6 w-6 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
               title: "Rename" %>
       </span>
     <% end %>

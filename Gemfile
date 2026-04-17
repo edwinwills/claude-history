@@ -43,6 +43,10 @@ gem "image_processing", "~> 1.2"
 # Markdown rendering for conversation text blocks
 gem "redcarpet", "~> 3.6"
 
+# Tailwind + shadcn UI components
+gem "tailwindcss-rails", "~> 3.3"
+gem "shadcn-ui"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
