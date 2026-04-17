@@ -9,10 +9,10 @@
 <h1 class="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
 
 <div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
-  <h2 class="text-lg font-semibold mb-1">claude.ai session key</h2>
+  <h2 class="text-lg font-semibold mb-1">claude.ai cookie</h2>
   <p class="text-sm text-muted-foreground mb-4">
-    Used by <strong>Sync Desktop</strong> to fetch your conversations from claude.ai. This is stored locally in
-    the app's SQLite database.
+    Used by <strong>Sync Desktop</strong> to fetch your conversations from claude.ai. Stored locally in
+    this app's SQLite database.
   </p>
 
   <div class="mb-4 text-sm">
@@ -25,25 +25,27 @@
       <span class="text-muted-foreground ml-2">Using <code class="font-mono">CLAUDE_AI_SESSION_KEY</code> (unset the env var or save below to override).</span>
     <% else %>
       <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/20 text-destructive">Not set</span>
-      <span class="text-muted-foreground ml-2">Desktop sync is disabled until you add a key.</span>
+      <span class="text-muted-foreground ml-2">Desktop sync is disabled until you add a cookie.</span>
     <% end %>
   </div>
 
   <%= form_with model: @setting, url: setting_path, method: :patch, class: "flex flex-col gap-3" do |f| %>
-    <%= f.label :claude_ai_session_key, "Session key", class: "text-sm font-medium" %>
-    <%= f.password_field :claude_ai_session_key,
+    <%= f.label :claude_ai_session_key, "Cookie", class: "text-sm font-medium" %>
+    <%= f.text_area :claude_ai_session_key,
           value: @setting.claude_ai_session_key,
-          placeholder: "sk-ant-sid01-…",
+          rows: 4,
+          placeholder: "Either the full Cookie header (sessionKey=…; cf_clearance=…; …) or just the sessionKey value",
           autocomplete: "off",
-          class: "flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+          spellcheck: false,
+          class: "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring break-all" %>
     <div class="flex gap-2">
-      <%= f.submit "Save key",
+      <%= f.submit "Save",
             class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
       <% if @setting.claude_ai_session_key.present? %>
         <%= button_to "Clear",
               setting_path,
               method: :delete,
-              form: { data: { turbo_confirm: "Remove the stored session key?" }, class: "inline" },
+              form: { data: { turbo_confirm: "Remove the stored cookie?" }, class: "inline" },
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-border bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors" %>
       <% end %>
     </div>
@@ -51,30 +53,37 @@
 </div>
 
 <div class="rounded-lg border border-border bg-card text-card-foreground p-4">
-  <h2 class="text-lg font-semibold mb-3">How to get your session key</h2>
-  <p class="text-sm text-muted-foreground mb-3">
-    claude.ai doesn't expose a public API for your conversation history, so we read it using the same
-    session cookie your browser has after you log in. The key is named <code class="font-mono">sessionKey</code>.
+  <h2 class="text-lg font-semibold mb-3">How to get your claude.ai cookie</h2>
+  <p class="text-sm text-muted-foreground mb-4">
+    claude.ai sits behind Cloudflare, which frequently rejects requests that send only the <code class="font-mono">sessionKey</code>
+    cookie (you'll see a <code class="font-mono">403</code>). The reliable path is to copy the <strong>entire Cookie header</strong>
+    from one of claude.ai's own API requests — that captures <code class="font-mono">sessionKey</code>,
+    <code class="font-mono">cf_clearance</code>, and any org cookies together.
   </p>
 
-  <ol class="list-decimal pl-5 text-sm space-y-2 mb-4">
-    <li>Open <a href="https://claude.ai" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai</a> in your browser and make sure you're signed in.</li>
-    <li>Open DevTools:
-      <ul class="list-disc pl-5 mt-1 text-muted-foreground">
-        <li>Chrome / Edge / Arc: <code class="font-mono">⌘⌥I</code> (macOS) or <code class="font-mono">Ctrl+Shift+I</code> (Windows/Linux)</li>
-        <li>Firefox: <code class="font-mono">⌘⌥I</code> / <code class="font-mono">Ctrl+Shift+I</code></li>
-        <li>Safari: enable the Develop menu first (Safari → Settings → Advanced → "Show features for web developers"), then <code class="font-mono">⌘⌥I</code></li>
-      </ul>
-    </li>
-    <li>Go to the <strong>Application</strong> tab (Chrome-family) or <strong>Storage</strong> tab (Firefox/Safari).</li>
-    <li>In the left sidebar, expand <strong>Cookies</strong> → <strong>https://claude.ai</strong>.</li>
-    <li>Find the row named <code class="font-mono">sessionKey</code>. The <em>Value</em> column holds the string you want (starts with <code class="font-mono">sk-ant-sid01-…</code> and is long).</li>
-    <li>Copy the value and paste it into the field above.</li>
+  <h3 class="font-semibold mb-1">Recommended: copy the full Cookie header</h3>
+  <ol class="list-decimal pl-5 text-sm space-y-2 mb-5">
+    <li>Open <a href="https://claude.ai" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai</a> and sign in. Open any conversation so API calls are happening.</li>
+    <li>Open DevTools (<code class="font-mono">⌘⌥I</code> macOS / <code class="font-mono">Ctrl+Shift+I</code> others) and go to the <strong>Network</strong> tab. Filter by <strong>Fetch/XHR</strong>.</li>
+    <li>Click any request under <code class="font-mono">claude.ai</code> whose path starts with <code class="font-mono">/api/…</code> (e.g. <code class="font-mono">chat_conversations</code>).</li>
+    <li>In the right pane, open <strong>Headers</strong> → <strong>Request Headers</strong>, find the <code class="font-mono">Cookie</code> row, and copy its entire value (long string of <code class="font-mono">name=value; name=value; …</code>).</li>
+    <li>Paste it into the field above and save.</li>
   </ol>
 
-  <div class="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-    <p class="mb-1"><strong class="text-foreground">What this key can do:</strong> anyone with it can read and send messages as you on claude.ai. Treat it like a password.</p>
-    <p class="mb-1"><strong class="text-foreground">Expiry:</strong> the cookie is valid until you sign out of claude.ai or it naturally expires (a few weeks, usually). If Sync Desktop starts returning auth errors, copy a fresh key.</p>
-    <p><strong class="text-foreground">Stored where:</strong> locally in <code class="font-mono">storage/development.sqlite3</code> on this machine — it never leaves your laptop.</p>
+  <details class="text-sm">
+    <summary class="cursor-pointer font-semibold">Alternative: just the sessionKey value</summary>
+    <p class="text-muted-foreground mt-2 mb-2">If Cloudflare isn't challenging your IP, this sometimes works on its own.</p>
+    <ol class="list-decimal pl-5 space-y-1">
+      <li>DevTools → <strong>Application</strong> (Chrome-family) or <strong>Storage</strong> (Firefox/Safari) tab.</li>
+      <li>Expand <strong>Cookies</strong> → <strong>https://claude.ai</strong>.</li>
+      <li>Copy the <em>Value</em> of the <code class="font-mono">sessionKey</code> row (starts with <code class="font-mono">sk-ant-sid01-…</code>).</li>
+      <li>Paste just that value above. If syncs start 403-ing, switch to the full-Cookie method.</li>
+    </ol>
+  </details>
+
+  <div class="mt-4 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+    <p class="mb-1"><strong class="text-foreground">What this unlocks:</strong> anyone with this cookie can read and send messages as you on claude.ai. Treat it like a password.</p>
+    <p class="mb-1"><strong class="text-foreground">When it expires:</strong> <code class="font-mono">cf_clearance</code> typically lasts ~1 hour; <code class="font-mono">sessionKey</code> lasts weeks. If Sync Desktop 403s, grab a fresh Cookie header.</p>
+    <p><strong class="text-foreground">Stored where:</strong> locally in <code class="font-mono">storage/development.sqlite3</code> — it never leaves your laptop.</p>
   </div>
 </div>

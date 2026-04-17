@@ -21,6 +21,22 @@ class ClaudeDesktop::ClientTest < ActiveSupport::TestCase
     assert_equal "https://claude.ai", ClaudeDesktop::Client::BASE
   end
 
+  test "format_cookie leaves a full Cookie header untouched" do
+    client = ClaudeDesktop::Client.new(session_key: "sk")
+    full = "sessionKey=sk-ant-sid01-abc; cf_clearance=xyz; intercom=1"
+    assert_equal full, client.send(:format_cookie, full)
+  end
+
+  test "format_cookie wraps a bare sessionKey value" do
+    client = ClaudeDesktop::Client.new(session_key: "sk")
+    assert_equal "sessionKey=sk-ant-sid01-abc", client.send(:format_cookie, "sk-ant-sid01-abc")
+  end
+
+  test "format_cookie strips whitespace" do
+    client = ClaudeDesktop::Client.new(session_key: "sk")
+    assert_equal "sessionKey=abc", client.send(:format_cookie, "  abc\n")
+  end
+
   test "passes org + conversation ids in the paths" do
     calls = []
     http = ->(path) { calls << path; [] }

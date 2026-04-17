@@ -6,9 +6,10 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   test "show renders the form and the instructions" do
     get setting_path
     assert_response :success
-    assert_match "session key", response.body
+    assert_match "claude.ai cookie", response.body
     assert_match "DevTools", response.body
     assert_match "sessionKey", response.body
+    assert_match "cf_clearance", response.body
   end
 
   test "update saves the key" do
