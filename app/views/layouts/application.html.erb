@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <title><%= content_for(:title) || "Claude History" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -8,6 +8,18 @@
     <%= yield :head %>
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
+
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var theme = ["light", "dark", "system"].indexOf(stored) >= 0 ? stored : "system";
+          var isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (isDark) document.documentElement.classList.add("dark");
+          document.documentElement.dataset.theme = theme;
+        } catch (e) {}
+      })();
+    </script>
 
     <%= stylesheet_link_tag "tailwind", "inter-font", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
@@ -22,6 +34,21 @@
                 autocomplete: "off",
                 class: "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
         <% end %>
+
+        <div class="inline-flex items-center rounded-md border border-border bg-background h-9 p-0.5" role="group" aria-label="Theme" data-controller="theme">
+          <% [ [ "light", "☀", "Light" ], [ "dark", "☾", "Dark" ], [ "system", "⌂", "System" ] ].each do |value, icon, label| %>
+            <button type="button"
+                    data-theme-target="option"
+                    data-theme-value="<%= value %>"
+                    data-action="theme#select"
+                    aria-label="<%= label %>"
+                    title="<%= label %>"
+                    class="inline-flex items-center justify-center h-8 w-8 rounded text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-muted-foreground">
+              <%= icon %>
+            </button>
+          <% end %>
+        </div>
+
         <%= link_to "Trash", trash_path,
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" %>
         <%= button_to "Sync", sync_path, method: :post,
