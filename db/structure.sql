@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "ar_internal_metadata" ("key" varchar NOT NULL PRIMAR
 CREATE TABLE IF NOT EXISTS "projects" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "path" varchar NOT NULL, "name" varchar NOT NULL, "last_activity_at" datetime(6), "conversation_count" integer DEFAULT 0 NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_projects_on_path" ON "projects" ("path") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_projects_on_last_activity_at" ON "projects" ("last_activity_at") /*application='ClaudeHistory'*/;
-CREATE TABLE IF NOT EXISTS "conversations" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "project_id" integer NOT NULL, "session_id" varchar NOT NULL, "file_path" varchar NOT NULL, "file_mtime" datetime(6), "file_size" integer, "slug" varchar, "title" varchar, "started_at" datetime(6), "last_activity_at" datetime(6), "message_count" integer DEFAULT 0 NOT NULL, "git_branch" varchar, "cwd" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "custom_title" varchar /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_57f4adaad9"
+CREATE TABLE IF NOT EXISTS "conversations" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "project_id" integer NOT NULL, "session_id" varchar NOT NULL, "file_path" varchar NOT NULL, "file_mtime" datetime(6), "file_size" integer, "slug" varchar, "title" varchar, "started_at" datetime(6), "last_activity_at" datetime(6), "message_count" integer DEFAULT 0 NOT NULL, "git_branch" varchar, "cwd" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "custom_title" varchar /*application='ClaudeHistory'*/, "deleted_at" datetime(6) /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_57f4adaad9"
 FOREIGN KEY ("project_id")
   REFERENCES "projects" ("id")
 );
@@ -52,7 +52,9 @@ FOREIGN KEY ("label_id")
 CREATE INDEX "index_conversation_labels_on_conversation_id" ON "conversation_labels" ("conversation_id") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_conversation_labels_on_label_id" ON "conversation_labels" ("label_id") /*application='ClaudeHistory'*/;
 CREATE UNIQUE INDEX "index_conversation_labels_on_conversation_id_and_label_id" ON "conversation_labels" ("conversation_id", "label_id") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_conversations_on_deleted_at" ON "conversations" ("deleted_at") /*application='ClaudeHistory'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260417120006'),
 ('20260417120005'),
 ('20260417120004'),
 ('20260417120003'),

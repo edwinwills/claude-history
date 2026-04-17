@@ -10,11 +10,16 @@
 
 <%= render "conversations/title", conversation: @conversation, editing: false, variant: :heading %>
 
-<div class="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+<div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
   <span>Branch: <% if @conversation.git_branch.present? %><code class="font-mono text-foreground"><%= @conversation.git_branch %></code><% else %>—<% end %></span>
   <span>Started: <%= @conversation.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
   <span>Messages: <%= @conversation.message_count %></span>
   <span>Session: <code class="font-mono text-foreground"><%= @conversation.session_id %></code></span>
+  <%= button_to "Move to trash",
+        conversation_path(@conversation),
+        method: :delete,
+        form: { class: "ml-auto", data: { turbo_confirm: "Move this conversation to trash? You can restore it from /trash." } },
+        class: "inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 border border-border bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors" %>
 </div>
 
 <div class="mb-4">

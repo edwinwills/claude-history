@@ -22,6 +22,8 @@
                 autocomplete: "off",
                 class: "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
         <% end %>
+        <%= link_to "Trash", trash_path,
+              class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" %>
         <%= button_to "Sync", sync_path, method: :post,
               class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
               form_class: "m-0" %>

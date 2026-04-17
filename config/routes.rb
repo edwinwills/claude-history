@@ -4,10 +4,12 @@ Rails.application.routes.draw do
   root "projects#index"
 
   resources :projects, only: [ :show ]
-  resources :conversations, only: [ :show, :update ] do
+  resources :conversations, only: [ :show, :update, :destroy ] do
     get :title, on: :member
+    patch :restore, on: :member
     resources :labels, only: [ :create, :destroy ], controller: "conversation_labels"
   end
   get "/search", to: "searches#show", as: :search
   post "/sync", to: "sync#create", as: :sync
+  get "/trash", to: "trash#index", as: :trash
 end

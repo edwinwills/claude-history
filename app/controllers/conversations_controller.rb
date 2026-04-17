@@ -36,6 +36,18 @@ class ConversationsController < ApplicationController
     end
   end
 
+  def destroy
+    @conversation = Conversation.find(params[:id])
+    @conversation.soft_delete!
+    redirect_to project_path(@conversation.project), notice: "Conversation moved to trash."
+  end
+
+  def restore
+    @conversation = Conversation.with_deleted.find(params[:id])
+    @conversation.restore!
+    redirect_to conversation_path(@conversation), notice: "Conversation restored."
+  end
+
   private
 
   def title_variant

@@ -17,6 +17,8 @@ class SearchesController < ApplicationController
 
     messages = Message
       .where(id: ids)
+      .joins(:conversation)
+      .where(conversations: { deleted_at: nil })
       .includes(conversation: :project)
     messages = messages.sort_by { |m| ids.index(m.id) }
 

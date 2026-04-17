@@ -40,7 +40,11 @@ module ClaudeHistory
       session_id = File.basename(file, ".jsonl")
       mtime = File.mtime(file)
 
-      existing = Conversation.find_by(session_id: session_id)
+      existing = Conversation.with_deleted.find_by(session_id: session_id)
+      if existing&.deleted_at
+        @summary.skipped += 1
+        return
+      end
       if existing && existing.file_mtime && existing.file_path == file && existing.file_mtime.to_i >= mtime.to_i
         @summary.skipped += 1
         return
@@ -56,7 +60,7 @@ module ClaudeHistory
       project = Project.find_or_create_for_cwd(cwd)
 
       ActiveRecord::Base.transaction do
-        conversation = Conversation.find_or_initialize_by(session_id: session_id)
+        conversation = Conversation.with_deleted.find_or_initialize_by(session_id: session_id)
         conversation.project = project
         conversation.file_path = file
         conversation.file_mtime = mtime
