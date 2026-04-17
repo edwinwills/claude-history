@@ -1,0 +1,26 @@
+<% content_for :title, "#{@project.name} — Claude History" %>
+
+<nav class="crumbs"><%= link_to "Projects", root_path %> / <%= @project.name %></nav>
+<h1><%= @project.name %></h1>
+<p class="meta"><code><%= @project.path %></code></p>
+
+<% if @conversations.empty? %>
+  <p class="empty">No conversations for this project.</p>
+<% else %>
+  <table class="conversations">
+    <thead>
+      <tr><th>Title</th><th class="num">Messages</th><th>Branch</th><th>Started</th><th>Last activity</th></tr>
+    </thead>
+    <tbody>
+      <% @conversations.each do |c| %>
+        <tr>
+          <td><%= link_to c.display_title, conversation_path(c), class: "conv-title" %></td>
+          <td class="num"><%= c.message_count %></td>
+          <td><%= c.git_branch.presence || "—" %></td>
+          <td title="<%= c.started_at %>"><%= relative_time(c.started_at) %></td>
+          <td title="<%= c.last_activity_at %>"><%= relative_time(c.last_activity_at) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

@@ -1,0 +1,34 @@
+<% content_for :title, "Search — Claude History" %>
+
+<h1>Search</h1>
+
+<%= form_with url: search_path, method: :get, local: true, class: "search-form big" do |f| %>
+  <%= f.search_field :q, value: @query, placeholder: "Search all conversations…", autofocus: true %>
+  <%= f.submit "Search" %>
+<% end %>
+
+<% if @query.blank? %>
+  <p class="empty">Type a query to search across all message text.</p>
+<% elsif @results.empty? %>
+  <p class="empty">No matches for <strong><%= @query %></strong>.</p>
+<% else %>
+  <p class="meta"><%= @match_count %> matches across <%= @results.size %> conversations</p>
+  <% @results.each do |conversation, messages| %>
+    <section class="result-group">
+      <h2>
+        <%= link_to conversation.display_title, conversation_path(conversation) %>
+        <span class="dim">— <%= conversation.project.name %> · <%= relative_time(conversation.last_activity_at) %></span>
+      </h2>
+      <% messages.each do |message| %>
+        <div class="result">
+          <div class="result-meta">
+            <span class="role role-<%= message.role %>"><%= message.role %></span>
+            <span class="ts"><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>
+            <%= link_to "jump", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "jump" %>
+          </div>
+          <div class="result-snippet"><%= snippet_around(message.text_content, @query) %></div>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>

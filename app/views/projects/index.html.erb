@@ -1,0 +1,27 @@
+<% content_for :title, "Projects — Claude History" %>
+
+<h1>Projects</h1>
+<p class="meta"><%= @projects.size %> projects · <%= @total_conversations %> conversations</p>
+
+<% if @projects.empty? %>
+  <div class="empty">
+    <p>No conversations indexed yet.</p>
+    <p>Click <strong>Sync</strong> to scan <code>~/.claude/projects</code>.</p>
+  </div>
+<% else %>
+  <table class="projects">
+    <thead>
+      <tr><th>Project</th><th>Path</th><th class="num">Sessions</th><th>Last activity</th></tr>
+    </thead>
+    <tbody>
+      <% @projects.each do |project| %>
+        <tr>
+          <td><%= link_to project.name, project_path(project) %></td>
+          <td class="path"><%= project.path %></td>
+          <td class="num"><%= project.conversation_count %></td>
+          <td title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

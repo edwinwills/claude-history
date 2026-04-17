@@ -1,0 +1,39 @@
+<% content_for :title, "#{@conversation.display_title} — Claude History" %>
+
+<nav class="crumbs">
+  <%= link_to "Projects", root_path %> /
+  <%= link_to @project.name, project_path(@project) %> /
+  <span>Session</span>
+</nav>
+
+<h1><%= @conversation.display_title %></h1>
+<div class="conv-meta">
+  <span>Branch: <code><%= @conversation.git_branch.presence || "—" %></code></span>
+  <span>Started: <%= @conversation.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
+  <span>Messages: <%= @conversation.message_count %></span>
+  <span>Session: <code><%= @conversation.session_id %></code></span>
+</div>
+
+<div class="resume-box" data-controller="clipboard">
+  <div class="resume-label">Resume in a new terminal:</div>
+  <div class="resume-row">
+    <code data-clipboard-target="source"><%= @conversation.resume_command %></code>
+    <button type="button" data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
+  </div>
+</div>
+
+<div class="messages">
+  <% @messages.each do |message| %>
+    <article class="msg msg-<%= message.role %>" id="msg-<%= message.uuid %>">
+      <header class="msg-header">
+        <span class="role"><%= message.role %></span>
+        <span class="ts"><%= message.timestamp&.strftime("%H:%M:%S") %></span>
+      </header>
+      <div class="msg-body">
+        <% message.content_blocks.each do |block| %>
+          <%= render "conversations/block", block: block %>
+        <% end %>
+      </div>
+    </article>
+  <% end %>
+</div>

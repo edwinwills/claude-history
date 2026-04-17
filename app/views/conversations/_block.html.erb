@@ -1,0 +1,31 @@
+<% case block["type"] %>
+<% when "text" %>
+  <div class="block-text"><%= render_markdown(block["text"].to_s) %></div>
+<% when "thinking" %>
+  <details class="block-thinking">
+    <summary>thinking</summary>
+    <pre><%= block["thinking"].to_s %></pre>
+  </details>
+<% when "tool_use" %>
+  <details class="block-tool-use">
+    <summary><span class="tag">tool_use</span> <%= block["name"] %> <span class="dim"><%= truncate_plain(block["input"].to_json.to_s, 120) %></span></summary>
+    <pre><%= JSON.pretty_generate(block["input"] || {}) %></pre>
+  </details>
+<% when "tool_result" %>
+  <% inner = block["content"] %>
+  <details class="block-tool-result">
+    <summary><span class="tag">tool_result</span> <span class="dim"><%= truncate_plain(ClaudeHistory::RecordParser.flatten_content(inner), 120) %></span></summary>
+    <% if inner.is_a?(Array) %>
+      <% inner.each do |sub| %>
+        <%= render "conversations/block", block: sub %>
+      <% end %>
+    <% else %>
+      <pre><%= inner.to_s %></pre>
+    <% end %>
+  </details>
+<% else %>
+  <details class="block-unknown">
+    <summary><span class="tag"><%= block["type"] %></span></summary>
+    <pre><%= JSON.pretty_generate(block) %></pre>
+  </details>
+<% end %>
