@@ -6,16 +6,59 @@
   <span class="text-foreground">Trash</span>
 </nav>
 
-<div class="flex items-baseline justify-between mb-4">
-  <h1 class="text-2xl font-semibold tracking-tight">Trash</h1>
-  <div class="text-sm text-muted-foreground"><%= @conversations.size %> conversation<%= 's' unless @conversations.size == 1 %></div>
-</div>
+<h1 class="text-2xl font-semibold tracking-tight mb-4">Trash</h1>
 
-<% if @conversations.empty? %>
+<% if @deleted_projects.empty? && @deleted_conversations.empty? %>
   <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
     Trash is empty.
   </div>
-<% else %>
+<% end %>
+
+<% if @deleted_projects.any? %>
+  <div class="flex items-baseline justify-between mb-2">
+    <h2 class="text-lg font-semibold tracking-tight">Projects</h2>
+    <div class="text-sm text-muted-foreground"><%= @deleted_projects.size %> project<%= 's' unless @deleted_projects.size == 1 %></div>
+  </div>
+
+  <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden mb-8">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left font-medium px-4 py-3">Project</th>
+            <th class="text-left font-medium px-4 py-3">Source</th>
+            <th class="text-right font-medium px-4 py-3">Conversations</th>
+            <th class="text-left font-medium px-4 py-3">Deleted</th>
+            <th class="text-right font-medium px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <% @deleted_projects.each do |project| %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2 text-muted-foreground"><%= project.name %></td>
+              <td class="px-4 py-2"><%= source_badge(project.source, size: :sm) %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= project.conversation_count %></td>
+              <td class="px-4 py-2 text-muted-foreground" title="<%= project.deleted_at %>"><%= relative_time(project.deleted_at) %></td>
+              <td class="px-4 py-2 text-right">
+                <%= button_to "Restore",
+                      restore_project_path(project),
+                      method: :patch,
+                      class: "inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<% if @deleted_conversations.any? %>
+  <div class="flex items-baseline justify-between mb-2">
+    <h2 class="text-lg font-semibold tracking-tight">Conversations</h2>
+    <div class="text-sm text-muted-foreground"><%= @deleted_conversations.size %> conversation<%= 's' unless @deleted_conversations.size == 1 %></div>
+  </div>
+
   <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -30,7 +73,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-border">
-          <% @conversations.each do |c| %>
+          <% @deleted_conversations.each do |c| %>
             <tr class="hover:bg-muted/40">
               <td class="px-4 py-2 text-muted-foreground"><%= c.display_title %></td>
               <td class="px-4 py-2"><%= source_badge(c.source, size: :sm) %></td>

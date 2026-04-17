@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "schema_migrations" ("version" varchar NOT NULL PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS "ar_internal_metadata" ("key" varchar NOT NULL PRIMARY KEY, "value" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
-CREATE TABLE IF NOT EXISTS "projects" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "path" varchar NOT NULL, "name" varchar NOT NULL, "last_activity_at" datetime(6), "conversation_count" integer DEFAULT 0 NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "projects" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "path" varchar NOT NULL, "name" varchar NOT NULL, "last_activity_at" datetime(6), "conversation_count" integer DEFAULT 0 NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "deleted_at" datetime(6) /*application='ClaudeHistory'*/);
 CREATE UNIQUE INDEX "index_projects_on_path" ON "projects" ("path") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_projects_on_last_activity_at" ON "projects" ("last_activity_at") /*application='ClaudeHistory'*/;
 CREATE TABLE IF NOT EXISTS "conversations" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "project_id" integer NOT NULL, "session_id" varchar NOT NULL, "file_path" varchar NOT NULL, "file_mtime" datetime(6), "file_size" integer, "slug" varchar, "title" varchar, "started_at" datetime(6), "last_activity_at" datetime(6), "message_count" integer DEFAULT 0 NOT NULL, "git_branch" varchar, "cwd" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "custom_title" varchar /*application='ClaudeHistory'*/, "deleted_at" datetime(6) /*application='ClaudeHistory'*/, "source" varchar DEFAULT 'code' NOT NULL /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_57f4adaad9"
@@ -66,7 +66,9 @@ FOREIGN KEY ("blob_id")
   REFERENCES "active_storage_blobs" ("id")
 );
 CREATE UNIQUE INDEX "index_active_storage_variant_records_uniqueness" ON "active_storage_variant_records" ("blob_id", "variation_digest") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_projects_on_deleted_at" ON "projects" ("deleted_at") /*application='ClaudeHistory'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260418130000'),
 ('20260418100001'),
 ('20260418100000'),
 ('20260417120010'),

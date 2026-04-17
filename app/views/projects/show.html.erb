@@ -9,6 +9,11 @@
 <div class="flex flex-wrap items-center gap-3 mb-1">
   <h1 class="text-2xl font-semibold tracking-tight"><%= @project.name %></h1>
   <%= source_badge(@project.source) %>
+  <%= button_to "Move project to trash",
+        project_path(@project),
+        method: :delete,
+        form: { class: "ml-auto", data: { turbo_confirm: "Move '#{@project.name}' and all #{@project.conversation_count} conversation(s) to trash? You can restore the whole batch from /trash." } },
+        class: "inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 border border-border bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors" %>
 </div>
 <p class="text-muted-foreground mb-4">
   <% if @project.desktop? %>
