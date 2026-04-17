@@ -1,4 +1,27 @@
 module ApplicationHelper
+  # Renders a consistent pill for a conversation or project source.
+  #   source: "code" | "desktop"
+  #   size:   :md (default) | :sm
+  SOURCE_META = {
+    "code"    => { label: "Code",    icon: "⌨" },
+    "desktop" => { label: "Desktop", icon: "◐" }
+  }.freeze
+
+  def source_badge(source, size: :md, class: nil)
+    source = source.to_s
+    meta = SOURCE_META[source] || { label: source.titleize, icon: "·" }
+
+    base = "inline-flex items-center gap-1 rounded-full font-medium uppercase tracking-wide"
+    sized = size == :sm ? "px-1.5 py-0 text-[9px]" : "px-2 py-0.5 text-[10px]"
+    color = source == "desktop" ? "bg-secondary text-secondary-foreground" : "bg-primary/10 text-primary"
+    extra = binding.local_variable_get(:class)
+
+    content_tag(:span, class: "#{base} #{sized} #{color} #{extra}".strip, title: "Source: #{meta[:label]}") do
+      concat content_tag(:span, meta[:icon], class: "opacity-70", "aria-hidden": "true")
+      concat content_tag(:span, meta[:label])
+    end
+  end
+
   MARKDOWN_RENDERER = Redcarpet::Markdown.new(
     Redcarpet::Render::HTML.new(
       hard_wrap: true,

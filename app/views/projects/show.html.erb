@@ -6,8 +6,17 @@
   <span class="text-foreground"><%= @project.name %></span>
 </nav>
 
-<h1 class="text-2xl font-semibold tracking-tight"><%= @project.name %></h1>
-<p class="text-muted-foreground mb-4"><code class="font-mono text-sm"><%= @project.path %></code></p>
+<div class="flex flex-wrap items-center gap-3 mb-1">
+  <h1 class="text-2xl font-semibold tracking-tight"><%= @project.name %></h1>
+  <%= source_badge(@project.source) %>
+</div>
+<p class="text-muted-foreground mb-4">
+  <% if @project.desktop? %>
+    <span class="italic">Imported from your claude.ai data export.</span>
+  <% else %>
+    <code class="font-mono text-sm"><%= @project.path %></code>
+  <% end %>
+</p>
 
 <% if @conversations.empty? %>
   <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
