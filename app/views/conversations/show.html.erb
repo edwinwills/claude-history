@@ -11,7 +11,10 @@
 <%= render "conversations/title", conversation: @conversation, editing: false, variant: :heading %>
 
 <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-  <span>Branch: <% if @conversation.git_branch.present? %><code class="font-mono text-foreground"><%= @conversation.git_branch %></code><% else %>—<% end %></span>
+  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide <%= @conversation.desktop? ? 'bg-secondary text-secondary-foreground' : 'bg-primary/10 text-primary' %>"><%= @conversation.source %></span>
+  <% if @conversation.code? %>
+    <span>Branch: <% if @conversation.git_branch.present? %><code class="font-mono text-foreground"><%= @conversation.git_branch %></code><% else %>—<% end %></span>
+  <% end %>
   <span>Started: <%= @conversation.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
   <span>Messages: <%= @conversation.message_count %></span>
   <span>Session: <code class="font-mono text-foreground"><%= @conversation.session_id %></code></span>
@@ -26,15 +29,26 @@
   <%= render "conversations/labels", conversation: @conversation %>
 </div>
 
-<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6" data-controller="clipboard">
-  <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Resume in a new terminal</div>
-  <div class="flex gap-2 items-center">
-    <code class="flex-1 font-mono text-sm bg-muted/40 rounded px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
-    <button type="button"
-            class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
+<% if @conversation.code? %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6" data-controller="clipboard">
+    <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Resume in a new terminal</div>
+    <div class="flex gap-2 items-center">
+      <code class="flex-1 font-mono text-sm bg-muted/40 rounded px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
+      <button type="button"
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
+    </div>
   </div>
-</div>
+<% else %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+    <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Claude Desktop conversation</div>
+    <p class="text-sm">Imported from your claude.ai data export. Open the original at
+      <a class="text-primary hover:underline" href="https://claude.ai/chat/<%= @conversation.session_id %>" target="_blank" rel="noopener">
+        claude.ai/chat/<%= @conversation.session_id[0, 8] %>…
+      </a>
+    </p>
+  </div>
+<% end %>
 
 <div class="flex flex-col gap-3">
   <% @messages.each do |message| %>

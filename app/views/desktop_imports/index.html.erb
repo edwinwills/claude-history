@@ -1,0 +1,128 @@
+<% content_for :title, "Import — Claude History" %>
+
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Import Desktop</span>
+</nav>
+
+<h1 class="text-2xl font-semibold tracking-tight mb-4">Import claude.ai export</h1>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-1">Upload ZIP</h2>
+  <p class="text-sm text-muted-foreground mb-4">
+    Drop the ZIP file you received from claude.ai's data export. Only <code class="font-mono">conversations.json</code>
+    is read; re-uploading the same export is safe — conversations are deduplicated by their UUID and
+    updated only when newer.
+  </p>
+
+  <%= form_with url: desktop_imports_path, method: :post, multipart: true, class: "flex flex-wrap items-center gap-2" do |f| %>
+    <%= f.file_field :archive,
+          accept: ".zip,.json,application/zip,application/json",
+          required: true,
+          class: "flex-1 min-w-[240px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-primary/90 text-sm text-muted-foreground" %>
+    <%= f.submit "Upload and process",
+          class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
+  <% end %>
+  <p class="text-xs text-muted-foreground mt-2">Accepts <code class="font-mono">.zip</code> (official export) or <code class="font-mono">.json</code> (produced by the bookmarklet below).</p>
+</div>
+
+<% bookmarklet_js = <<~'JS'.squish
+  javascript:(async()=>{const PAGE=100;const f=async(u,opts)=>{const r=await fetch(u,{credentials:'include'});if(!r.ok){const e=new Error(`HTTP ${r.status} for ${u}`);e.status=r.status;throw e}return r.json()};const norm=(d)=>{if(Array.isArray(d))return d;if(!d||typeof d!=='object')return [];for(const k of ['data','conversations','organizations','results','items'])if(Array.isArray(d[k]))return d[k];console.warn('[claude-export] unexpected shape',d);return []};const listOrgConvs=async(orgUuid)=>{const all=[];let offset=0;while(true){const url=`/api/organizations/${orgUuid}/chat_conversations_v2?limit=${PAGE}&offset=${offset}&consistency=eventual`;const page=norm(await f(url));console.log(`[claude-export] org ${orgUuid} offset=${offset} got ${page.length}`);all.push(...page);if(page.length<PAGE)break;offset+=PAGE}return all};try{console.log('[claude-export] starting');const orgs=norm(await f('/api/organizations'));console.log('[claude-export] orgs',orgs.map(o=>({uuid:o.uuid,name:o.name})));if(!orgs.length)throw new Error('no organizations returned — are you signed in?');const orgConvs=[];let total=0;for(const o of orgs){try{const cs=await listOrgConvs(o.uuid);orgConvs.push([o,cs]);total+=cs.length}catch(e){if(e.status===403){console.warn(`[claude-export] org ${o.uuid} (${o.name}) is not listable (403) — skipping`)}else{console.error(`[claude-export] org ${o.uuid} failed`,e);throw e}}}if(!total)throw new Error('no conversations found across '+orgs.length+' organizations (check the Console for per-org logs)');const out=[];let done=0;for(const [o,cs] of orgConvs){for(const c of cs){done++;document.title=`[${done}/${total}] Claude export…`;try{out.push(await f(`/api/organizations/${o.uuid}/chat_conversations/${c.uuid}?tree=True&rendering_mode=messages`))}catch(e){console.error('[claude-export] skipped',c.uuid,e.message)}}}const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='claude-export.json';document.body.appendChild(a);a.click();URL.revokeObjectURL(u);alert(`Exported ${out.length} of ${total} conversations to claude-export.json`)}catch(e){console.error('[claude-export] failed',e);alert('Export failed: '+e.message+'\\nSee DevTools Console for details (the bookmarklet logs each step).')}})()
+JS
+%>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-2">Option A — official export (.zip)</h2>
+  <ol class="list-decimal pl-5 text-sm space-y-2">
+    <li>Open <a href="https://claude.ai/settings/data-privacy-controls" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai → Settings → Data controls</a> (formerly "Privacy").</li>
+    <li>Click <strong>Export data</strong>. Claude emails you a link once the export is ready.</li>
+    <li>Download the ZIP from the email link and upload it above.</li>
+  </ol>
+  <p class="text-xs text-muted-foreground mt-3">
+    Anthropic's sanctioned path — stable, but <strong>Team accounts often hide this</strong> for non-admin members.
+    If you don't see the Export data button, use Option B.
+  </p>
+</div>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-2">Option B — browser bookmarklet (.json)</h2>
+  <p class="text-sm text-muted-foreground mb-3">
+    For Team/Enterprise accounts where the export UI is hidden: a one-line bookmarklet that runs in your
+    browser's claude.ai tab, fetches your own conversations using your logged-in session, and downloads
+    <code class="font-mono">claude-export.json</code> to your disk. Cloudflare / TLS fingerprinting isn't an
+    issue because the request originates from your actual browser.
+  </p>
+  <ol class="list-decimal pl-5 text-sm space-y-2 mb-3">
+    <li>Show your bookmarks bar (<code class="font-mono">⌘⇧B</code> / <code class="font-mono">Ctrl+Shift+B</code>).</li>
+    <li>Drag the blue button below onto it:
+      <div class="mt-2">
+        <a href="<%= bookmarklet_js %>"
+           onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar — don\\'t click it here.')"
+           class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 cursor-grab">
+          📥 Export Claude → JSON
+        </a>
+      </div>
+    </li>
+    <li>Open <a href="https://claude.ai" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai</a> and sign in. Wait for the page to fully load.</li>
+    <li>Open DevTools Console (<code class="font-mono">⌘⌥J</code> / <code class="font-mono">Ctrl+Shift+J</code>) so you can see per-step progress and any errors.</li>
+    <li>Click the bookmarklet. The tab title updates with progress (<code class="font-mono">[N/M] Claude export…</code>); for large histories this may take a minute or two.</li>
+    <li>A file named <code class="font-mono">claude-export.json</code> downloads. Upload it above.</li>
+  </ol>
+  <details class="text-sm">
+    <summary class="cursor-pointer text-muted-foreground">Can't drag? Copy the code and create a bookmark manually</summary>
+    <p class="text-muted-foreground mt-2">Create a new bookmark, set the URL to the following, pointed at any name:</p>
+    <textarea readonly rows="4" class="w-full mt-2 rounded-md border border-input bg-background p-2 text-xs font-mono break-all"><%= bookmarklet_js %></textarea>
+  </details>
+</div>
+
+<h2 class="text-lg font-semibold tracking-tight mb-2">Past imports</h2>
+
+<% if @imports.empty? %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-6 text-center text-muted-foreground">
+    No imports yet.
+  </div>
+<% else %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left font-medium px-4 py-3">When</th>
+            <th class="text-left font-medium px-4 py-3">File</th>
+            <th class="text-left font-medium px-4 py-3">Status</th>
+            <th class="text-right font-medium px-4 py-3">Seen</th>
+            <th class="text-right font-medium px-4 py-3">Created</th>
+            <th class="text-right font-medium px-4 py-3">Updated</th>
+            <th class="text-right font-medium px-4 py-3">Skipped</th>
+            <th class="text-right font-medium px-4 py-3">Errors</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <% @imports.each do |import| %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2 text-muted-foreground" title="<%= import.created_at %>"><%= relative_time(import.created_at) %></td>
+              <td class="px-4 py-2"><code class="text-xs font-mono"><%= import.filename %></code>
+                <% if import.byte_size %><span class="text-xs text-muted-foreground ml-1">(<%= number_to_human_size(import.byte_size) %>)</span><% end %>
+              </td>
+              <td class="px-4 py-2">
+                <% if import.succeeded? %>
+                  <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">succeeded</span>
+                <% elsif import.failed? %>
+                  <span class="inline-flex items-center rounded-full bg-destructive/20 text-destructive px-2 py-0.5 text-xs" title="<%= import.error_detail %>">failed</span>
+                <% else %>
+                  <span class="inline-flex items-center rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-xs"><%= import.status %></span>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_seen %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_created %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_updated %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= import.conversations_skipped %></td>
+              <td class="px-4 py-2 text-right <%= 'text-destructive' if import.error_count.positive? %>"><%= import.error_count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

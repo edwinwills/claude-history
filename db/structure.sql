@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "ar_internal_metadata" ("key" varchar NOT NULL PRIMAR
 CREATE TABLE IF NOT EXISTS "projects" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "path" varchar NOT NULL, "name" varchar NOT NULL, "last_activity_at" datetime(6), "conversation_count" integer DEFAULT 0 NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_projects_on_path" ON "projects" ("path") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_projects_on_last_activity_at" ON "projects" ("last_activity_at") /*application='ClaudeHistory'*/;
-CREATE TABLE IF NOT EXISTS "conversations" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "project_id" integer NOT NULL, "session_id" varchar NOT NULL, "file_path" varchar NOT NULL, "file_mtime" datetime(6), "file_size" integer, "slug" varchar, "title" varchar, "started_at" datetime(6), "last_activity_at" datetime(6), "message_count" integer DEFAULT 0 NOT NULL, "git_branch" varchar, "cwd" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "custom_title" varchar /*application='ClaudeHistory'*/, "deleted_at" datetime(6) /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_57f4adaad9"
+CREATE TABLE IF NOT EXISTS "conversations" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "project_id" integer NOT NULL, "session_id" varchar NOT NULL, "file_path" varchar NOT NULL, "file_mtime" datetime(6), "file_size" integer, "slug" varchar, "title" varchar, "started_at" datetime(6), "last_activity_at" datetime(6), "message_count" integer DEFAULT 0 NOT NULL, "git_branch" varchar, "cwd" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "custom_title" varchar /*application='ClaudeHistory'*/, "deleted_at" datetime(6) /*application='ClaudeHistory'*/, "source" varchar DEFAULT 'code' NOT NULL /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_57f4adaad9"
 FOREIGN KEY ("project_id")
   REFERENCES "projects" ("id")
 );
@@ -49,7 +49,29 @@ CREATE INDEX "index_conversation_labels_on_conversation_id" ON "conversation_lab
 CREATE INDEX "index_conversation_labels_on_label_id" ON "conversation_labels" ("label_id") /*application='ClaudeHistory'*/;
 CREATE UNIQUE INDEX "index_conversation_labels_on_conversation_id_and_label_id" ON "conversation_labels" ("conversation_id", "label_id") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_conversations_on_deleted_at" ON "conversations" ("deleted_at") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_conversations_on_source" ON "conversations" ("source") /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "settings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "claude_ai_session_key" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "claude_ai_user_agent" varchar /*application='ClaudeHistory'*/);
+CREATE TABLE IF NOT EXISTS "desktop_imports" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversations_seen" integer DEFAULT 0 NOT NULL, "conversations_created" integer DEFAULT 0 NOT NULL, "conversations_updated" integer DEFAULT 0 NOT NULL, "conversations_skipped" integer DEFAULT 0 NOT NULL, "error_count" integer DEFAULT 0 NOT NULL, "error_detail" text, "status" varchar DEFAULT 'pending' NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE INDEX "index_desktop_imports_on_created_at" ON "desktop_imports" ("created_at") /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "active_storage_blobs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "key" varchar NOT NULL, "filename" varchar NOT NULL, "content_type" varchar, "metadata" text, "service_name" varchar NOT NULL, "byte_size" bigint NOT NULL, "checksum" varchar, "created_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_active_storage_blobs_on_key" ON "active_storage_blobs" ("key") /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "active_storage_attachments" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "record_type" varchar NOT NULL, "record_id" bigint NOT NULL, "blob_id" bigint NOT NULL, "created_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_c3b3935057"
+FOREIGN KEY ("blob_id")
+  REFERENCES "active_storage_blobs" ("id")
+);
+CREATE INDEX "index_active_storage_attachments_on_blob_id" ON "active_storage_attachments" ("blob_id") /*application='ClaudeHistory'*/;
+CREATE UNIQUE INDEX "index_active_storage_attachments_uniqueness" ON "active_storage_attachments" ("record_type", "record_id", "name", "blob_id") /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "active_storage_variant_records" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "blob_id" bigint NOT NULL, "variation_digest" varchar NOT NULL, CONSTRAINT "fk_rails_993965df05"
+FOREIGN KEY ("blob_id")
+  REFERENCES "active_storage_blobs" ("id")
+);
+CREATE UNIQUE INDEX "index_active_storage_variant_records_uniqueness" ON "active_storage_variant_records" ("blob_id", "variation_digest") /*application='ClaudeHistory'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260418100001'),
+('20260418100000'),
+('20260417120010'),
+('20260417120009'),
+('20260417120008'),
 ('20260417120007'),
 ('20260417120006'),
 ('20260417120005'),

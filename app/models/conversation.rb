@@ -1,4 +1,6 @@
 class Conversation < ApplicationRecord
+  SOURCES = %w[code desktop].freeze
+
   belongs_to :project
   has_many :messages, -> { order(:position) }, dependent: :destroy
   has_many :conversation_labels, dependent: :destroy
@@ -8,10 +10,13 @@ class Conversation < ApplicationRecord
 
   validates :session_id, presence: true, uniqueness: true
   validates :file_path, presence: true, uniqueness: true
+  validates :source, inclusion: { in: SOURCES }
 
   scope :recent, -> { order(last_activity_at: :desc) }
   scope :with_deleted, -> { unscope(where: :deleted_at) }
   scope :deleted, -> { unscope(where: :deleted_at).where.not(deleted_at: nil) }
+  scope :code, -> { where(source: "code") }
+  scope :desktop, -> { where(source: "desktop") }
   scope :with_label, ->(label) { joins(:labels).where(labels: { id: label }) }
   scope :with_label_name, ->(name) {
     joins(:labels).where("LOWER(labels.name) = ?", name.to_s.downcase.strip)
@@ -29,7 +34,16 @@ class Conversation < ApplicationRecord
     deleted_at.present?
   end
 
+  def code?
+    source == "code"
+  end
+
+  def desktop?
+    source == "desktop"
+  end
+
   def resume_command
+    return nil unless code?
     "cd #{Shellwords.escape(cwd.to_s)} && claude --resume #{session_id}"
   end
 
