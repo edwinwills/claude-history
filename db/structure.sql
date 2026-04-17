@@ -26,10 +26,6 @@ CREATE VIRTUAL TABLE messages_fts USING fts5(
   tokenize='porter unicode61'
 )
 /* messages_fts(text_content) */;
-CREATE TABLE IF NOT EXISTS 'messages_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
-CREATE TABLE IF NOT EXISTS 'messages_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS 'messages_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
-CREATE TABLE IF NOT EXISTS 'messages_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 CREATE TRIGGER messages_ai AFTER INSERT ON messages BEGIN
   INSERT INTO messages_fts(rowid, text_content) VALUES (new.id, new.text_content);
 END;
