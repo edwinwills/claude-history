@@ -7,3 +7,10 @@
 * Easily search, label, and view historic Claude Code and Desktop conversations in one interface.
 * Delete convesations fromt his history without removing them from your Claude history folder
 * One-click copy the command to restore a previous conversation to your terminal
+
+## Installation
+* Checkout this repo
+* `mise install ruby@latest`
+* `bundle install`
+* `bin/rails s`
+* Visit http://localhost:3000 in your browser
