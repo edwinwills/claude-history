@@ -1,7 +1,6 @@
 <% content_for :title, "Projects — Claude History" %>
 
 <div class="flex flex-wrap items-center gap-2 mb-4">
-  <span class="text-xs uppercase tracking-wide text-muted-foreground mr-1">Source:</span>
   <% source_preserve = { label: params[:label] }.compact %>
   <% [ [ nil, "All" ], [ "code", "Code" ], [ "desktop", "Desktop" ] ].each do |value, label| %>
     <% active = (@active_source || nil) == value %>
@@ -14,7 +13,6 @@
 
 <% if @all_labels.any? || @active_label %>
   <div class="flex flex-wrap items-center gap-2 mb-4">
-    <span class="text-xs uppercase tracking-wide text-muted-foreground mr-1">Label:</span>
     <% label_preserve = { source: @active_source }.compact %>
     <% @all_labels.each do |label| %>
       <% active = @active_label&.id == label.id %>
