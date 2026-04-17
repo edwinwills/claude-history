@@ -1,9 +1,9 @@
 class DesktopSyncsController < ApplicationController
   def create
-    session_key = ENV["CLAUDE_AI_SESSION_KEY"].to_s.strip
+    session_key = Setting.claude_ai_session_key.to_s.strip
     if session_key.empty?
-      redirect_to(request.referer.presence || root_path,
-                  alert: "Set CLAUDE_AI_SESSION_KEY to your claude.ai sessionKey cookie before syncing desktop.")
+      redirect_to(setting_path,
+                  alert: "Add your claude.ai sessionKey cookie in Settings before syncing desktop.")
       return
     end
 

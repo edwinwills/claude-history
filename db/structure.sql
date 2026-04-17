@@ -50,7 +50,9 @@ CREATE INDEX "index_conversation_labels_on_label_id" ON "conversation_labels" ("
 CREATE UNIQUE INDEX "index_conversation_labels_on_conversation_id_and_label_id" ON "conversation_labels" ("conversation_id", "label_id") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_conversations_on_deleted_at" ON "conversations" ("deleted_at") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_conversations_on_source" ON "conversations" ("source") /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "settings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "claude_ai_session_key" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 INSERT INTO "schema_migrations" (version) VALUES
+('20260417120009'),
 ('20260417120008'),
 ('20260417120007'),
 ('20260417120006'),

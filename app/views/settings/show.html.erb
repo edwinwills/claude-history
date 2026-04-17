@@ -1,0 +1,80 @@
+<% content_for :title, "Settings — Claude History" %>
+
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Settings</span>
+</nav>
+
+<h1 class="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6">
+  <h2 class="text-lg font-semibold mb-1">claude.ai session key</h2>
+  <p class="text-sm text-muted-foreground mb-4">
+    Used by <strong>Sync Desktop</strong> to fetch your conversations from claude.ai. This is stored locally in
+    the app's SQLite database.
+  </p>
+
+  <div class="mb-4 text-sm">
+    <% case @source %>
+    <% when :database %>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary">Configured</span>
+      <span class="text-muted-foreground ml-2">Saved in database</span>
+    <% when :env %>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground">From env</span>
+      <span class="text-muted-foreground ml-2">Using <code class="font-mono">CLAUDE_AI_SESSION_KEY</code> (unset the env var or save below to override).</span>
+    <% else %>
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/20 text-destructive">Not set</span>
+      <span class="text-muted-foreground ml-2">Desktop sync is disabled until you add a key.</span>
+    <% end %>
+  </div>
+
+  <%= form_with model: @setting, url: setting_path, method: :patch, class: "flex flex-col gap-3" do |f| %>
+    <%= f.label :claude_ai_session_key, "Session key", class: "text-sm font-medium" %>
+    <%= f.password_field :claude_ai_session_key,
+          value: @setting.claude_ai_session_key,
+          placeholder: "sk-ant-sid01-…",
+          autocomplete: "off",
+          class: "flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+    <div class="flex gap-2">
+      <%= f.submit "Save key",
+            class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
+      <% if @setting.claude_ai_session_key.present? %>
+        <%= button_to "Clear",
+              setting_path,
+              method: :delete,
+              form: { data: { turbo_confirm: "Remove the stored session key?" }, class: "inline" },
+              class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-border bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<div class="rounded-lg border border-border bg-card text-card-foreground p-4">
+  <h2 class="text-lg font-semibold mb-3">How to get your session key</h2>
+  <p class="text-sm text-muted-foreground mb-3">
+    claude.ai doesn't expose a public API for your conversation history, so we read it using the same
+    session cookie your browser has after you log in. The key is named <code class="font-mono">sessionKey</code>.
+  </p>
+
+  <ol class="list-decimal pl-5 text-sm space-y-2 mb-4">
+    <li>Open <a href="https://claude.ai" target="_blank" rel="noopener" class="text-primary hover:underline">claude.ai</a> in your browser and make sure you're signed in.</li>
+    <li>Open DevTools:
+      <ul class="list-disc pl-5 mt-1 text-muted-foreground">
+        <li>Chrome / Edge / Arc: <code class="font-mono">⌘⌥I</code> (macOS) or <code class="font-mono">Ctrl+Shift+I</code> (Windows/Linux)</li>
+        <li>Firefox: <code class="font-mono">⌘⌥I</code> / <code class="font-mono">Ctrl+Shift+I</code></li>
+        <li>Safari: enable the Develop menu first (Safari → Settings → Advanced → "Show features for web developers"), then <code class="font-mono">⌘⌥I</code></li>
+      </ul>
+    </li>
+    <li>Go to the <strong>Application</strong> tab (Chrome-family) or <strong>Storage</strong> tab (Firefox/Safari).</li>
+    <li>In the left sidebar, expand <strong>Cookies</strong> → <strong>https://claude.ai</strong>.</li>
+    <li>Find the row named <code class="font-mono">sessionKey</code>. The <em>Value</em> column holds the string you want (starts with <code class="font-mono">sk-ant-sid01-…</code> and is long).</li>
+    <li>Copy the value and paste it into the field above.</li>
+  </ol>
+
+  <div class="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+    <p class="mb-1"><strong class="text-foreground">What this key can do:</strong> anyone with it can read and send messages as you on claude.ai. Treat it like a password.</p>
+    <p class="mb-1"><strong class="text-foreground">Expiry:</strong> the cookie is valid until you sign out of claude.ai or it naturally expires (a few weeks, usually). If Sync Desktop starts returning auth errors, copy a fresh key.</p>
+    <p><strong class="text-foreground">Stored where:</strong> locally in <code class="font-mono">storage/development.sqlite3</code> on this machine — it never leaves your laptop.</p>
+  </div>
+</div>

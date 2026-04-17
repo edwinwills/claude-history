@@ -1,36 +1,49 @@
 require "test_helper"
 
 class DesktopSyncsControllerTest < ActionDispatch::IntegrationTest
-  test "without CLAUDE_AI_SESSION_KEY it redirects with an alert" do
+  setup { Setting.instance.update!(claude_ai_session_key: nil) }
+
+  test "redirects to Settings with an alert when no key is configured" do
     with_env("CLAUDE_AI_SESSION_KEY", nil) do
       post desktop_sync_path
-      assert_redirected_to root_path
+      assert_redirected_to setting_path
       follow_redirect!
-      assert_match(/CLAUDE_AI_SESSION_KEY/, response.body)
+      assert_match(/sessionKey/, response.body)
     end
   end
 
-  test "calls Importer.run with the env session key" do
+  test "uses the DB-stored session key with Importer.run" do
+    Setting.instance.update!(claude_ai_session_key: "sk-from-db")
     calls = []
     with_importer_stub(->(**kwargs) {
       calls << kwargs
       ClaudeDesktop::Importer::Summary.new(organizations: 1, conversations_seen: 0, created: 0, updated: 0, skipped: 0, errors: 0)
     }) do
-      with_env("CLAUDE_AI_SESSION_KEY", "sk-ant-test") do
+      with_env("CLAUDE_AI_SESSION_KEY", "sk-from-env") do
         post desktop_sync_path
       end
     end
-
     assert_redirected_to root_path
-    assert_equal 1, calls.size
-    assert_equal "sk-ant-test", calls.first[:session_key]
+    assert_equal "sk-from-db", calls.first[:session_key], "DB value should win over env"
+  end
+
+  test "falls back to the env key when nothing is stored" do
+    calls = []
+    with_importer_stub(->(**kwargs) {
+      calls << kwargs
+      ClaudeDesktop::Importer::Summary.new(organizations: 1, conversations_seen: 0, created: 0, updated: 0, skipped: 0, errors: 0)
+    }) do
+      with_env("CLAUDE_AI_SESSION_KEY", "sk-env-only") do
+        post desktop_sync_path
+      end
+    end
+    assert_equal "sk-env-only", calls.first[:session_key]
   end
 
   test "auth errors surface as a flash alert" do
+    Setting.instance.update!(claude_ai_session_key: "sk-expired")
     with_importer_stub(->(**) { raise ClaudeDesktop::Client::AuthError, "session expired" }) do
-      with_env("CLAUDE_AI_SESSION_KEY", "sk-ant-expired") do
-        post desktop_sync_path
-      end
+      post desktop_sync_path
     end
     assert_redirected_to root_path
     follow_redirect!

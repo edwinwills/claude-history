@@ -14,4 +14,5 @@ Rails.application.routes.draw do
   post "/desktop_sync", to: "desktop_syncs#create", as: :desktop_sync
   get "/trash", to: "trash#index", as: :trash
   resources :labels, only: [ :index, :create, :update, :destroy ]
+  resource :setting, only: [ :show, :update, :destroy ]
 end
