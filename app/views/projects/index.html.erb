@@ -2,11 +2,10 @@
 
 <% if @all_labels.any? || @active_label %>
   <div class="flex flex-wrap items-center gap-2 mb-4">
-    <span class="text-xs uppercase tracking-wide opacity-60 mr-1">Labels:</span>
     <% @all_labels.each do |label| %>
       <% active = @active_label&.id == label.id %>
       <%= link_to root_path(label: (active ? nil : label.name)),
-            class: "badge badge-md badge-#{label.color_class} #{'badge-soft' unless active} gap-1.5 hover:shadow-sm transition-shadow" do %>
+            class: "badge badge-md badge-#{label.color_class} #{'badge-soft' unless active} gap-1.5 hover:brightness-90 transition" do %>
         <span class="font-medium"><%= label.name %></span>
         <span class="opacity-70 text-xs"><%= label.conversations.size %></span>
       <% end %>
@@ -52,7 +51,7 @@
                   <div class="flex flex-wrap gap-1">
                     <% c.labels.alphabetical.each do |l| %>
                       <%= link_to l.name, root_path(label: l.name),
-                            class: "badge badge-sm badge-#{l.color_class} #{'badge-soft' if l.id != @active_label.id} hover:shadow-sm" %>
+                            class: "badge badge-sm badge-#{l.color_class} #{'badge-soft' if l.id != @active_label.id} hover:brightness-90 transition" %>
                     <% end %>
                   </div>
                 </td>
