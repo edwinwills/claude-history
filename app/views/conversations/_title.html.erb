@@ -2,40 +2,50 @@
 <% frame_id = "conversation_title_#{variant}_#{conversation.id}" %>
 <% display_url = title_conversation_path(conversation, variant: variant) %>
 <% edit_url    = title_conversation_path(conversation, variant: variant, editing: true) %>
-<%= turbo_frame_tag frame_id, class: "title-frame title-frame-#{variant}" do %>
+<%= turbo_frame_tag frame_id do %>
   <% if editing %>
     <%= form_with model: conversation,
           url: conversation_path(conversation),
           method: :patch,
-          class: "title-edit title-edit-#{variant}",
+          class: (variant == :inline ? "flex items-center gap-1 flex-wrap" : "flex items-center gap-2 flex-wrap my-3"),
           data: { turbo_frame: frame_id } do |f| %>
       <%= hidden_field_tag :variant, variant %>
       <%= f.text_field :custom_title,
             value: (conversation.custom_title.presence || conversation.display_title),
             autofocus: true,
+            class: (variant == :inline ? "input input-bordered input-sm w-64" : "input input-bordered input-md text-xl font-semibold w-full max-w-xl"),
             data: { controller: "title-edit", action: "keydown.esc->title-edit#cancel" } %>
-      <%= f.submit "Save" %>
-      <%= link_to "Cancel", display_url, data: { turbo_frame: frame_id }, class: "cancel" %>
+      <%= f.submit "Save", class: (variant == :inline ? "btn btn-primary btn-xs" : "btn btn-primary btn-sm") %>
+      <%= link_to "Cancel", display_url,
+            data: { turbo_frame: frame_id },
+            class: (variant == :inline ? "btn btn-ghost btn-xs" : "btn btn-ghost btn-sm") %>
       <% if conversation.custom_title.present? %>
         <%= button_to "Reset",
               conversation_path(conversation),
               method: :patch,
               params: { conversation: { custom_title: "" }, variant: variant },
-              form: { data: { turbo_frame: frame_id } },
-              class: "reset" %>
+              form: { data: { turbo_frame: frame_id }, class: "inline" },
+              class: (variant == :inline ? "btn btn-outline btn-xs" : "btn btn-outline btn-sm") %>
       <% end %>
     <% end %>
   <% else %>
     <% case variant %>
     <% when :heading %>
-      <h1 class="title-display title-display-heading">
-        <span class="title-text"><%= conversation.display_title %></span>
-        <%= link_to "✎", edit_url, data: { turbo_frame: frame_id }, class: "edit-icon", title: "Rename" %>
-      </h1>
+      <div class="reveal-on-hover flex items-center gap-2 my-1">
+        <h1 class="text-2xl font-semibold"><%= conversation.display_title %></h1>
+        <%= link_to "✎", edit_url,
+              data: { turbo_frame: frame_id },
+              class: "edit-icon btn btn-ghost btn-sm btn-square",
+              title: "Rename" %>
+      </div>
     <% when :inline %>
-      <span class="title-display title-display-inline">
-        <%= link_to conversation.display_title, conversation_path(conversation), class: "conv-title" %>
-        <%= link_to "✎", edit_url, data: { turbo_frame: frame_id }, class: "edit-icon", title: "Rename" %>
+      <span class="reveal-on-hover inline-flex items-center gap-1">
+        <%= link_to conversation.display_title, conversation_path(conversation),
+              class: "link link-hover truncate max-w-xl inline-block align-middle" %>
+        <%= link_to "✎", edit_url,
+              data: { turbo_frame: frame_id },
+              class: "edit-icon btn btn-ghost btn-xs btn-square",
+              title: "Rename" %>
       </span>
     <% end %>
   <% end %>

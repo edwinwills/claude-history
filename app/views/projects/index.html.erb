@@ -1,27 +1,49 @@
 <% content_for :title, "Projects — Claude History" %>
 
-<h1>Projects</h1>
-<p class="meta"><%= @projects.size %> projects · <%= @total_conversations %> conversations</p>
+<div class="flex items-baseline justify-between mb-4">
+  <h1 class="text-2xl font-semibold">Projects</h1>
+  <div class="stats stats-horizontal bg-base-100 shadow-sm">
+    <div class="stat px-6 py-3">
+      <div class="stat-title text-xs">Projects</div>
+      <div class="stat-value text-xl"><%= @projects.size %></div>
+    </div>
+    <div class="stat px-6 py-3">
+      <div class="stat-title text-xs">Conversations</div>
+      <div class="stat-value text-xl"><%= @total_conversations %></div>
+    </div>
+  </div>
+</div>
 
 <% if @projects.empty? %>
-  <div class="empty">
-    <p>No conversations indexed yet.</p>
-    <p>Click <strong>Sync</strong> to scan <code>~/.claude/projects</code>.</p>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body items-center text-center">
+      <p class="opacity-70">No conversations indexed yet.</p>
+      <p class="text-sm opacity-70">Click <span class="badge badge-primary">Sync</span> to scan <code class="font-mono">~/.claude/projects</code>.</p>
+    </div>
   </div>
 <% else %>
-  <table class="projects">
-    <thead>
-      <tr><th>Project</th><th>Path</th><th class="num">Sessions</th><th>Last activity</th></tr>
-    </thead>
-    <tbody>
-      <% @projects.each do |project| %>
-        <tr>
-          <td><%= link_to project.name, project_path(project) %></td>
-          <td class="path"><%= project.path %></td>
-          <td class="num"><%= project.conversation_count %></td>
-          <td title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Path</th>
+            <th class="text-right">Sessions</th>
+            <th>Last activity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @projects.each do |project| %>
+            <tr class="hover">
+              <td><%= link_to project.name, project_path(project), class: "link link-hover font-medium" %></td>
+              <td><code class="text-xs opacity-60"><%= project.path %></code></td>
+              <td class="text-right"><span class="badge badge-ghost"><%= project.conversation_count %></span></td>
+              <td class="opacity-70 text-sm" title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 <% end %>

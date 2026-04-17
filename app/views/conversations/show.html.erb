@@ -1,39 +1,46 @@
 <% content_for :title, "#{@conversation.display_title} — Claude History" %>
 
-<nav class="crumbs">
-  <%= link_to "Projects", root_path %> /
-  <%= link_to @project.name, project_path(@project) %> /
-  <span>Session</span>
-</nav>
-
-<%= render "conversations/title", conversation: @conversation, editing: false, variant: :heading %>
-<div class="conv-meta">
-  <span>Branch: <code><%= @conversation.git_branch.presence || "—" %></code></span>
-  <span>Started: <%= @conversation.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
-  <span>Messages: <%= @conversation.message_count %></span>
-  <span>Session: <code><%= @conversation.session_id %></code></span>
+<div class="text-sm breadcrumbs opacity-70 mb-2">
+  <ul>
+    <li><%= link_to "Projects", root_path %></li>
+    <li><%= link_to @project.name, project_path(@project) %></li>
+    <li>Session</li>
+  </ul>
 </div>
 
-<div class="resume-box" data-controller="clipboard">
-  <div class="resume-label">Resume in a new terminal:</div>
-  <div class="resume-row">
-    <code data-clipboard-target="source"><%= @conversation.resume_command %></code>
-    <button type="button" data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
+<%= render "conversations/title", conversation: @conversation, editing: false, variant: :heading %>
+
+<div class="flex flex-wrap gap-4 text-sm opacity-70 mb-4">
+  <span>Branch: <% if @conversation.git_branch.present? %><code class="font-mono"><%= @conversation.git_branch %></code><% else %>—<% end %></span>
+  <span>Started: <%= @conversation.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
+  <span>Messages: <%= @conversation.message_count %></span>
+  <span>Session: <code class="font-mono"><%= @conversation.session_id %></code></span>
+</div>
+
+<div class="card bg-base-100 shadow-sm mb-6" data-controller="clipboard">
+  <div class="card-body p-4">
+    <div class="text-xs uppercase tracking-wide opacity-60 mb-1">Resume in a new terminal</div>
+    <div class="flex gap-2 items-center">
+      <code class="flex-1 font-mono text-sm bg-base-200 rounded px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
+      <button type="button" class="btn btn-primary btn-sm" data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
+    </div>
   </div>
 </div>
 
-<div class="messages">
+<div class="flex flex-col gap-3">
   <% @messages.each do |message| %>
-    <article class="msg msg-<%= message.role %>" id="msg-<%= message.uuid %>">
-      <header class="msg-header">
-        <span class="role"><%= message.role %></span>
-        <span class="ts"><%= message.timestamp&.strftime("%H:%M:%S") %></span>
-      </header>
-      <div class="msg-body">
-        <% message.content_blocks.each do |block| %>
-          <%= render "conversations/block", block: block %>
-        <% end %>
+    <div class="chat <%= message.role == 'user' ? 'chat-end' : 'chat-start' %>" id="msg-<%= message.uuid %>">
+      <div class="chat-header opacity-60 text-xs mb-1">
+        <%= message.role %>
+        <time class="ml-1"><%= message.timestamp&.strftime("%H:%M:%S") %></time>
       </div>
-    </article>
+      <div class="chat-bubble <%= message.role == 'user' ? 'chat-bubble-success' : 'chat-bubble-info' %> max-w-3xl">
+        <div class="markdown-body">
+          <% message.content_blocks.each do |block| %>
+            <%= render "conversations/block", block: block %>
+          <% end %>
+        </div>
+      </div>
+    </div>
   <% end %>
 </div>

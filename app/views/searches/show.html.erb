@@ -1,34 +1,45 @@
 <% content_for :title, "Search — Claude History" %>
 
-<h1>Search</h1>
+<h1 class="text-2xl font-semibold mb-3">Search</h1>
 
-<%= form_with url: search_path, method: :get, local: true, class: "search-form big" do |f| %>
-  <%= f.search_field :q, value: @query, placeholder: "Search all conversations…", autofocus: true %>
-  <%= f.submit "Search" %>
+<%= form_with url: search_path, method: :get, local: true, class: "flex gap-2 mb-6" do |f| %>
+  <%= f.search_field :q, value: @query, placeholder: "Search all conversations…",
+        autofocus: true, class: "input input-bordered flex-1" %>
+  <%= f.submit "Search", class: "btn btn-primary" %>
 <% end %>
 
 <% if @query.blank? %>
-  <p class="empty">Type a query to search across all message text.</p>
+  <div class="card bg-base-100 shadow-sm"><div class="card-body items-center">
+    <p class="opacity-70">Type a query to search across all message text.</p>
+  </div></div>
 <% elsif @results.empty? %>
-  <p class="empty">No matches for <strong><%= @query %></strong>.</p>
+  <div class="card bg-base-100 shadow-sm"><div class="card-body items-center">
+    <p class="opacity-70">No matches for <strong><%= @query %></strong>.</p>
+  </div></div>
 <% else %>
-  <p class="meta"><%= @match_count %> matches across <%= @results.size %> conversations</p>
-  <% @results.each do |conversation, messages| %>
-    <section class="result-group">
-      <h2>
-        <%= link_to conversation.display_title, conversation_path(conversation) %>
-        <span class="dim">— <%= conversation.project.name %> · <%= relative_time(conversation.last_activity_at) %></span>
-      </h2>
-      <% messages.each do |message| %>
-        <div class="result">
-          <div class="result-meta">
-            <span class="role role-<%= message.role %>"><%= message.role %></span>
-            <span class="ts"><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>
-            <%= link_to "jump", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "jump" %>
+  <p class="text-sm opacity-70 mb-4"><%= @match_count %> matches across <%= @results.size %> conversations</p>
+  <div class="flex flex-col gap-4">
+    <% @results.each do |conversation, messages| %>
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="card-title text-base">
+            <%= link_to conversation.display_title, conversation_path(conversation), class: "link link-hover" %>
+            <span class="text-xs opacity-60 font-normal">· <%= conversation.project.name %> · <%= relative_time(conversation.last_activity_at) %></span>
+          </h2>
+          <div class="flex flex-col gap-2 mt-2">
+            <% messages.each do |message| %>
+              <div class="bg-base-200 rounded p-2">
+                <div class="flex items-center gap-2 text-xs opacity-70 mb-1">
+                  <span class="badge <%= message.role == 'user' ? 'badge-success' : 'badge-info' %> badge-sm"><%= message.role %></span>
+                  <span><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>
+                  <%= link_to "jump →", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "link link-hover ml-auto" %>
+                </div>
+                <div class="text-sm whitespace-pre-wrap break-words"><%= snippet_around(message.text_content, @query) %></div>
+              </div>
+            <% end %>
           </div>
-          <div class="result-snippet"><%= snippet_around(message.text_content, @query) %></div>
         </div>
-      <% end %>
-    </section>
-  <% end %>
+      </div>
+    <% end %>
+  </div>
 <% end %>
