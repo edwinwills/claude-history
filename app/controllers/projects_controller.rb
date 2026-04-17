@@ -22,4 +22,16 @@ class ProjectsController < ApplicationController
     @project = Project.find(params[:id])
     @conversations = @project.conversations.recent.includes(:labels)
   end
+
+  def destroy
+    @project = Project.find(params[:id])
+    @project.soft_delete!
+    redirect_to root_path, notice: "Moved '#{@project.name}' and #{@project.conversation_count} conversation(s) to trash."
+  end
+
+  def restore
+    @project = Project.with_deleted.find(params[:id])
+    @project.restore!
+    redirect_to project_path(@project), notice: "Restored '#{@project.name}'."
+  end
 end

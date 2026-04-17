@@ -3,7 +3,9 @@ Rails.application.routes.draw do
 
   root "projects#index"
 
-  resources :projects, only: [ :show ]
+  resources :projects, only: [ :show, :destroy ] do
+    patch :restore, on: :member
+  end
   resources :conversations, only: [ :show, :update, :destroy ] do
     get :title, on: :member
     patch :restore, on: :member
