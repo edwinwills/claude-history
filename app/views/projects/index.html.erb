@@ -1,10 +1,24 @@
 <% content_for :title, "Projects — Claude History" %>
 
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <span class="text-xs uppercase tracking-wide text-muted-foreground mr-1">Source:</span>
+  <% source_preserve = { label: params[:label] }.compact %>
+  <% [ [ nil, "All" ], [ "code", "Code" ], [ "desktop", "Desktop" ] ].each do |value, label| %>
+    <% active = (@active_source || nil) == value %>
+    <%= link_to root_path(source_preserve.merge(source: value)),
+          class: "inline-flex items-center rounded-md border px-3 h-8 text-xs font-medium transition-colors #{active ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'}" do %>
+      <%= label %>
+    <% end %>
+  <% end %>
+</div>
+
 <% if @all_labels.any? || @active_label %>
   <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-xs uppercase tracking-wide text-muted-foreground mr-1">Label:</span>
+    <% label_preserve = { source: @active_source }.compact %>
     <% @all_labels.each do |label| %>
       <% active = @active_label&.id == label.id %>
-      <%= link_to root_path(label: (active ? nil : label.name)),
+      <%= link_to root_path(label_preserve.merge(label: (active ? nil : label.name))),
             class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white transition hover:brightness-110 #{active ? 'ring-2 ring-ring ring-offset-2 ring-offset-background' : 'opacity-70 hover:opacity-100'}",
             style: "background-color: #{label.color_with_default}" do %>
         <span><%= label.name %></span>
@@ -12,7 +26,7 @@
       <% end %>
     <% end %>
     <% if @active_label %>
-      <%= link_to "clear ✕", root_path, class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
+      <%= link_to "clear ✕", root_path(label_preserve), class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
     <% end %>
   </div>
 <% end %>
