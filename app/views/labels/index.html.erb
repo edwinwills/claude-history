@@ -1,0 +1,37 @@
+<% content_for :title, "Labels — Claude History" %>
+
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Labels</span>
+</nav>
+
+<div class="flex items-baseline justify-between mb-4">
+  <h1 class="text-2xl font-semibold tracking-tight">Labels</h1>
+  <div class="text-sm text-muted-foreground"><%= @labels.size %> label<%= 's' unless @labels.size == 1 %></div>
+</div>
+
+<div class="rounded-lg border border-border bg-card p-4 mb-6">
+  <%= form_with model: @new_label, url: labels_path, method: :post, class: "flex items-center gap-2" do |f| %>
+    <%= f.text_field :name,
+          placeholder: "New label name…",
+          autocomplete: "off",
+          required: true,
+          class: "flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+    <%= f.hidden_field :color, value: Label::DEFAULT_COLOR %>
+    <%= f.submit "Create label",
+          class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
+  <% end %>
+</div>
+
+<% if @labels.empty? %>
+  <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
+    No labels yet. Create one above, or add a label directly on any conversation.
+  </div>
+<% else %>
+  <div class="flex flex-col gap-2">
+    <% @labels.each do |label| %>
+      <%= render "labels/row", label: label %>
+    <% end %>
+  </div>
+<% end %>

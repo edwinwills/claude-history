@@ -1,7 +1,8 @@
 <%= turbo_frame_tag "conversation_labels_#{conversation.id}", class: "block" do %>
   <div class="flex flex-wrap items-center gap-2">
     <% conversation.labels.alphabetical.each do |label| %>
-      <div class="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground pl-3 pr-1.5 h-7 text-xs font-medium hover:brightness-90 transition">
+      <div class="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1.5 h-7 text-xs font-medium text-white hover:brightness-90 transition"
+           style="background-color: <%= label.color_with_default %>">
         <%= link_to label.name, root_path(label: label.name),
               data: { turbo_frame: "_top" },
               class: "hover:underline" %>

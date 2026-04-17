@@ -1,0 +1,34 @@
+<%= turbo_frame_tag "label_row_#{label.id}" do %>
+  <div class="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+    <span class="inline-flex items-center rounded-full px-3 h-7 text-xs font-medium text-white shrink-0"
+          style="background-color: <%= label.color_with_default %>">
+      <%= label.name %>
+    </span>
+
+    <span class="text-sm text-muted-foreground">
+      <%= label.conversations.size %> conversation<%= 's' unless label.conversations.size == 1 %>
+    </span>
+
+    <div class="ml-auto flex items-center gap-2">
+      <div class="flex items-center gap-1" role="group" aria-label="Color">
+        <% Label::PALETTE.each do |hex| %>
+          <%= button_to "",
+                label_path(label),
+                method: :patch,
+                params: { label: { color: hex } },
+                form: { data: { turbo_frame: "label_row_#{label.id}" }, class: "inline" },
+                class: "w-6 h-6 rounded-full ring-offset-background transition-all #{'ring-2 ring-ring ring-offset-2' if label.color_with_default == hex} hover:scale-110",
+                style: "background-color: #{hex}",
+                title: hex,
+                aria: { label: hex } %>
+        <% end %>
+      </div>
+
+      <%= button_to "Delete",
+            label_path(label),
+            method: :delete,
+            form: { data: { turbo_confirm: "Delete label '#{label.name}' and remove it from all conversations?" }, class: "inline" },
+            class: "inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 border border-border bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors" %>
+    </div>
+  </div>
+<% end %>
