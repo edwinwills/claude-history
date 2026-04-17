@@ -1,0 +1,35 @@
+<%= turbo_frame_tag "conversation_labels_#{conversation.id}", class: "block" do %>
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-xs uppercase tracking-wide opacity-60">Labels:</span>
+
+    <% conversation.labels.alphabetical.each do |label| %>
+      <span class="badge badge-<%= label.color_class %> gap-1">
+        <%= link_to label.name, root_path(label: label.name), class: "hover:underline" %>
+        <%= button_to "✕",
+              conversation_label_path(conversation, label),
+              method: :delete,
+              form: { data: { turbo_frame: "conversation_labels_#{conversation.id}" }, class: "inline" },
+              class: "opacity-70 hover:opacity-100 ml-0.5",
+              title: "Remove label" %>
+      </span>
+    <% end %>
+
+    <%= form_with url: conversation_labels_path(conversation),
+          method: :post,
+          class: "inline-flex items-center gap-1",
+          data: { turbo_frame: "conversation_labels_#{conversation.id}" } do |f| %>
+      <%= f.text_field :name,
+            placeholder: "Add label…",
+            autocomplete: "off",
+            list: "labels-datalist",
+            class: "input input-bordered input-xs w-40" %>
+      <%= f.submit "Add", class: "btn btn-primary btn-xs" %>
+    <% end %>
+
+    <datalist id="labels-datalist">
+      <% Label.alphabetical.pluck(:name).each do |name| %>
+        <option value="<%= name %>"></option>
+      <% end %>
+    </datalist>
+  </div>
+<% end %>

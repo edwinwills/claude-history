@@ -1,49 +1,114 @@
 <% content_for :title, "Projects — Claude History" %>
 
-<div class="flex items-baseline justify-between mb-4">
-  <h1 class="text-2xl font-semibold">Projects</h1>
-  <div class="stats stats-horizontal bg-base-100 shadow-sm">
-    <div class="stat px-6 py-3">
-      <div class="stat-title text-xs">Projects</div>
-      <div class="stat-value text-xl"><%= @projects.size %></div>
-    </div>
-    <div class="stat px-6 py-3">
-      <div class="stat-title text-xs">Conversations</div>
-      <div class="stat-value text-xl"><%= @total_conversations %></div>
-    </div>
+<% if @all_labels.any? || @active_label %>
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-xs uppercase tracking-wide opacity-60 mr-1">Labels:</span>
+    <% @all_labels.each do |label| %>
+      <% active = @active_label&.id == label.id %>
+      <%= link_to root_path(label: (active ? nil : label.name)),
+            class: "badge badge-#{label.color_class} #{'badge-outline' unless active} hover:shadow" do %>
+        <%= label.name %>
+        <span class="opacity-70 ml-1"><%= label.conversations.size %></span>
+      <% end %>
+    <% end %>
+    <% if @active_label %>
+      <%= link_to "clear ✕", root_path, class: "btn btn-ghost btn-xs ml-1" %>
+    <% end %>
   </div>
-</div>
+<% end %>
 
-<% if @projects.empty? %>
-  <div class="card bg-base-100 shadow-sm">
-    <div class="card-body items-center text-center">
-      <p class="opacity-70">No conversations indexed yet.</p>
-      <p class="text-sm opacity-70">Click <span class="badge badge-primary">Sync</span> to scan <code class="font-mono">~/.claude/projects</code>.</p>
-    </div>
+<% if @active_label %>
+  <div class="flex items-baseline justify-between mb-4">
+    <h1 class="text-2xl font-semibold">
+      Conversations labeled
+      <span class="badge badge-<%= @active_label.color_class %> align-middle text-base"><%= @active_label.name %></span>
+    </h1>
+    <div class="text-sm opacity-70"><%= @labeled_conversations.size %> conversation<%= 's' unless @labeled_conversations.size == 1 %></div>
   </div>
-<% else %>
-  <div class="card bg-base-100 shadow-sm">
-    <div class="overflow-x-auto">
-      <table class="table table-sm">
-        <thead>
-          <tr>
-            <th>Project</th>
-            <th>Path</th>
-            <th class="text-right">Sessions</th>
-            <th>Last activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @projects.each do |project| %>
-            <tr class="hover">
-              <td><%= link_to project.name, project_path(project), class: "link link-hover font-medium" %></td>
-              <td><code class="text-xs opacity-60"><%= project.path %></code></td>
-              <td class="text-right"><span class="badge badge-ghost"><%= project.conversation_count %></span></td>
-              <td class="opacity-70 text-sm" title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
+
+  <% if @labeled_conversations.empty? %>
+    <div class="card bg-base-100 shadow-sm"><div class="card-body items-center">
+      <p class="opacity-70">No conversations with this label.</p>
+    </div></div>
+  <% else %>
+    <div class="card bg-base-100 shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Project</th>
+              <th>Labels</th>
+              <th class="text-right">Messages</th>
+              <th>Last activity</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @labeled_conversations.each do |c| %>
+              <tr class="hover">
+                <td><%= render "conversations/title", conversation: c, editing: false, variant: :inline %></td>
+                <td><%= link_to c.project.name, project_path(c.project), class: "link link-hover" %></td>
+                <td>
+                  <% c.labels.alphabetical.each do |l| %>
+                    <%= link_to l.name, root_path(label: l.name),
+                          class: "badge badge-#{l.color_class} badge-sm #{'badge-outline' if l.id != @active_label.id}" %>
+                  <% end %>
+                </td>
+                <td class="text-right"><span class="badge badge-ghost"><%= c.message_count %></span></td>
+                <td class="opacity-70 text-sm" title="<%= c.last_activity_at %>"><%= relative_time(c.last_activity_at) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+<% else %>
+  <div class="flex items-baseline justify-between mb-4">
+    <h1 class="text-2xl font-semibold">Projects</h1>
+    <div class="stats stats-horizontal bg-base-100 shadow-sm">
+      <div class="stat px-6 py-3">
+        <div class="stat-title text-xs">Projects</div>
+        <div class="stat-value text-xl"><%= @projects.size %></div>
+      </div>
+      <div class="stat px-6 py-3">
+        <div class="stat-title text-xs">Conversations</div>
+        <div class="stat-value text-xl"><%= @total_conversations %></div>
+      </div>
     </div>
   </div>
+
+  <% if @projects.empty? %>
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body items-center text-center">
+        <p class="opacity-70">No conversations indexed yet.</p>
+        <p class="text-sm opacity-70">Click <span class="badge badge-primary">Sync</span> to scan <code class="font-mono">~/.claude/projects</code>.</p>
+      </div>
+    </div>
+  <% else %>
+    <div class="card bg-base-100 shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Path</th>
+              <th class="text-right">Sessions</th>
+              <th>Last activity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @projects.each do |project| %>
+              <tr class="hover">
+                <td><%= link_to project.name, project_path(project), class: "link link-hover font-medium" %></td>
+                <td><code class="text-xs opacity-60"><%= project.path %></code></td>
+                <td class="text-right"><span class="badge badge-ghost"><%= project.conversation_count %></span></td>
+                <td class="opacity-70 text-sm" title="<%= project.last_activity_at %>"><%= relative_time(project.last_activity_at) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
 <% end %>

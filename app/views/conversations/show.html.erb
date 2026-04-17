@@ -17,6 +17,10 @@
   <span>Session: <code class="font-mono"><%= @conversation.session_id %></code></span>
 </div>
 
+<div class="mb-4">
+  <%= render "conversations/labels", conversation: @conversation %>
+</div>
+
 <div class="card bg-base-100 shadow-sm mb-6" data-controller="clipboard">
   <div class="card-body p-4">
     <div class="text-xs uppercase tracking-wide opacity-60 mb-1">Resume in a new terminal</div>

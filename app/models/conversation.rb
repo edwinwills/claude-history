@@ -1,11 +1,17 @@
 class Conversation < ApplicationRecord
   belongs_to :project
   has_many :messages, -> { order(:position) }, dependent: :destroy
+  has_many :conversation_labels, dependent: :destroy
+  has_many :labels, through: :conversation_labels
 
   validates :session_id, presence: true, uniqueness: true
   validates :file_path, presence: true, uniqueness: true
 
   scope :recent, -> { order(last_activity_at: :desc) }
+  scope :with_label, ->(label) { joins(:labels).where(labels: { id: label }) }
+  scope :with_label_name, ->(name) {
+    joins(:labels).where("LOWER(labels.name) = ?", name.to_s.downcase.strip)
+  }
 
   def resume_command
     "cd #{Shellwords.escape(cwd.to_s)} && claude --resume #{session_id}"

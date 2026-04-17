@@ -40,7 +40,20 @@ CREATE TRIGGER messages_au AFTER UPDATE ON messages BEGIN
   INSERT INTO messages_fts(messages_fts, rowid, text_content) VALUES('delete', old.id, old.text_content);
   INSERT INTO messages_fts(rowid, text_content) VALUES (new.id, new.text_content);
 END;
+CREATE TABLE IF NOT EXISTS "labels" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_labels_on_lower_name" ON "labels" (LOWER(name)) /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "conversation_labels" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "label_id" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_97fe12b0fc"
+FOREIGN KEY ("conversation_id")
+  REFERENCES "conversations" ("id")
+, CONSTRAINT "fk_rails_1780e2a8dd"
+FOREIGN KEY ("label_id")
+  REFERENCES "labels" ("id")
+);
+CREATE INDEX "index_conversation_labels_on_conversation_id" ON "conversation_labels" ("conversation_id") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_conversation_labels_on_label_id" ON "conversation_labels" ("label_id") /*application='ClaudeHistory'*/;
+CREATE UNIQUE INDEX "index_conversation_labels_on_conversation_id_and_label_id" ON "conversation_labels" ("conversation_id", "label_id") /*application='ClaudeHistory'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260417120005'),
 ('20260417120004'),
 ('20260417120003'),
 ('20260417120002'),
