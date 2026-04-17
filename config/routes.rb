@@ -4,7 +4,9 @@ Rails.application.routes.draw do
   root "projects#index"
 
   resources :projects, only: [ :show ]
-  resources :conversations, only: [ :show ]
+  resources :conversations, only: [ :show, :update ] do
+    get :title, on: :member
+  end
   get "/search", to: "searches#show", as: :search
   post "/sync", to: "sync#create", as: :sync
 end

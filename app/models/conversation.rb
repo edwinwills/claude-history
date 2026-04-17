@@ -12,6 +12,7 @@ class Conversation < ApplicationRecord
   end
 
   def display_title
+    return custom_title if custom_title.present?
     return title if title.present?
     return slug.to_s.tr("-", " ").capitalize if slug.present?
     "(untitled session #{session_id[0, 8]})"
