@@ -1,7 +1,22 @@
-<% content_for :title, "Projects — Claude History" %>
+<% content_for :title, "#{@active_view == "conversations" ? "Conversations" : "Projects"} — Claude History" %>
 
 <div class="flex flex-wrap items-center gap-2 mb-4">
-  <% source_preserve = { label: params[:label] }.compact %>
+  <% tab_preserve = { source: @active_source }.compact %>
+  <% [
+    [ "projects", "Projects", @total_projects, tab_preserve ],
+    [ "conversations", "Conversations", @total_conversations, tab_preserve.merge(view: "conversations") ]
+  ].each do |value, label, count, params| %>
+    <% active = @active_view == value %>
+    <%= link_to root_path(params),
+          class: "inline-flex items-center gap-1.5 rounded-md border px-3 h-8 text-xs font-medium transition-colors #{active ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'}" do %>
+      <span><%= label %></span>
+      <span class="<%= active ? 'opacity-80' : 'text-muted-foreground' %>"><%= count %></span>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <% source_preserve = { label: params[:label], view: (params[:view] if @active_view == "conversations" && !@active_label) }.compact %>
   <% [ [ nil, "All" ], [ "code", "Code" ], [ "desktop", "Desktop" ] ].each do |value, label| %>
     <% active = (@active_source || nil) == value %>
     <%= link_to root_path(source_preserve.merge(source: value)),
@@ -11,9 +26,9 @@
   <% end %>
 </div>
 
-<% if @all_labels.any? || @active_label %>
+<% if @active_view == "conversations" && (@all_labels.any? || @active_label) %>
   <div class="flex flex-wrap items-center gap-2 mb-4">
-    <% label_preserve = { source: @active_source }.compact %>
+    <% label_preserve = { source: @active_source, view: "conversations" }.compact %>
     <% @all_labels.each do |label| %>
       <% active = @active_label&.id == label.id %>
       <%= link_to root_path(label_preserve.merge(label: (active ? nil : label.name))),
@@ -24,7 +39,7 @@
       <% end %>
     <% end %>
     <% if @active_label %>
-      <%= link_to "clear ✕", root_path(label_preserve), class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
+      <%= link_to "clear ✕", root_path(label_preserve.merge(label: nil)), class: "text-xs text-muted-foreground hover:text-foreground ml-1" %>
     <% end %>
   </div>
 <% end %>
@@ -68,6 +83,54 @@
                     <% c.labels.alphabetical.each do |l| %>
                       <%= link_to l.name, root_path(label: l.name),
                             class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs text-white transition hover:brightness-110 #{'ring-2 ring-ring ring-offset-1 ring-offset-background' if l.id == @active_label.id}",
+                            style: "background-color: #{l.color_with_default}" %>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="px-4 py-2 text-right"><span class="text-muted-foreground"><%= c.message_count %></span></td>
+                <td class="px-4 py-2 text-muted-foreground" title="<%= c.last_activity_at %>"><%= relative_time(c.last_activity_at) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+<% elsif @active_view == "conversations" %>
+  <div class="flex items-baseline justify-between mb-4">
+    <h1 class="text-2xl font-semibold tracking-tight">Conversations</h1>
+    <div class="text-sm text-muted-foreground"><%= @conversations.size %> conversation<%= 's' unless @conversations.size == 1 %></div>
+  </div>
+
+  <% if @conversations.empty? %>
+    <div class="rounded-lg border border-border bg-card text-card-foreground p-8 text-center text-muted-foreground">
+      No conversations yet.
+    </div>
+  <% else %>
+    <div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+            <tr>
+              <th class="text-left font-medium px-4 py-3">Title</th>
+              <th class="text-left font-medium px-4 py-3">Source</th>
+              <th class="text-left font-medium px-4 py-3">Project</th>
+              <th class="text-left font-medium px-4 py-3">Labels</th>
+              <th class="text-right font-medium px-4 py-3">Messages</th>
+              <th class="text-left font-medium px-4 py-3">Last activity</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <% @conversations.each do |c| %>
+              <tr class="hover:bg-muted/40">
+                <td class="px-4 py-2"><%= render "conversations/title", conversation: c, editing: false, variant: :inline %></td>
+                <td class="px-4 py-2"><%= source_badge(c.source, size: :sm) %></td>
+                <td class="px-4 py-2"><%= link_to c.project.name, project_path(c.project), class: "text-primary hover:underline" %></td>
+                <td class="px-4 py-2">
+                  <div class="flex flex-wrap gap-1">
+                    <% c.labels.alphabetical.each do |l| %>
+                      <%= link_to l.name, root_path(label: l.name),
+                            class: "inline-flex items-center rounded-full px-2 py-0.5 text-xs text-white transition hover:brightness-110",
                             style: "background-color: #{l.color_with_default}" %>
                     <% end %>
                   </div>
