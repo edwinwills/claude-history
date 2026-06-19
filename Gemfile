@@ -44,7 +44,7 @@ gem "image_processing", "~> 2.0"
 gem "redcarpet", "~> 3.6"
 
 # Reading claude.ai export ZIP files
-gem "rubyzip", "~> 3.3", require: "zip"
+gem "rubyzip", "~> 3.4", require: "zip"
 
 # Tailwind + shadcn UI components
 gem "tailwindcss-rails", "~> 3.3"
