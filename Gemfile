@@ -47,7 +47,7 @@ gem "redcarpet", "~> 3.6"
 gem "rubyzip", "~> 3.4", require: "zip"
 
 # Tailwind + shadcn UI components
-gem "tailwindcss-rails", "~> 3.3"
+gem "tailwindcss-rails", "~> 4.6"
 gem "shadcn-ui"
 
 group :development, :test do
