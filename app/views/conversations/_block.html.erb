@@ -17,6 +17,11 @@
       <span class="font-mono"><%= block["name"] %></span>
       <span class="text-muted-foreground font-mono ml-2"><%= truncate_plain(block["input"].to_json.to_s, 140) %></span>
     </summary>
+    <% if (subagent = @subagents_by_tool_use_id&.[](block["id"])) %>
+      <div class="px-3 py-1.5 border-t border-border text-xs">
+        <%= link_to "View #{subagent.display_type} subagent transcript →", conversation_subagent_path(subagent.conversation_id, subagent), class: "text-primary hover:underline" %>
+      </div>
+    <% end %>
     <div class="px-3 py-2 border-t border-border"><pre class="tool-body"><%= JSON.pretty_generate(block["input"] || {}) %></pre></div>
   </details>
 <% when "tool_result" %>

@@ -11,14 +11,6 @@ CREATE INDEX "index_conversations_on_project_id" ON "conversations" ("project_id
 CREATE UNIQUE INDEX "index_conversations_on_session_id" ON "conversations" ("session_id") /*application='ClaudeHistory'*/;
 CREATE UNIQUE INDEX "index_conversations_on_file_path" ON "conversations" ("file_path") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_conversations_on_last_activity_at" ON "conversations" ("last_activity_at") /*application='ClaudeHistory'*/;
-CREATE TABLE IF NOT EXISTS "messages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "uuid" varchar, "parent_uuid" varchar, "record_type" varchar NOT NULL, "role" varchar, "text_content" text, "raw" text, "timestamp" datetime(6), "position" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_7f927086d2"
-FOREIGN KEY ("conversation_id")
-  REFERENCES "conversations" ("id")
-);
-CREATE INDEX "index_messages_on_conversation_id" ON "messages" ("conversation_id") /*application='ClaudeHistory'*/;
-CREATE INDEX "index_messages_on_conversation_id_and_position" ON "messages" ("conversation_id", "position") /*application='ClaudeHistory'*/;
-CREATE INDEX "index_messages_on_conversation_id_and_uuid" ON "messages" ("conversation_id", "uuid") /*application='ClaudeHistory'*/;
-CREATE INDEX "index_messages_on_record_type" ON "messages" ("record_type") /*application='ClaudeHistory'*/;
 CREATE VIRTUAL TABLE messages_fts USING fts5(
   text_content,
   content='messages',
@@ -26,16 +18,6 @@ CREATE VIRTUAL TABLE messages_fts USING fts5(
   tokenize='porter unicode61'
 )
 /* messages_fts(text_content) */;
-CREATE TRIGGER messages_ai AFTER INSERT ON messages BEGIN
-  INSERT INTO messages_fts(rowid, text_content) VALUES (new.id, new.text_content);
-END;
-CREATE TRIGGER messages_ad AFTER DELETE ON messages BEGIN
-  INSERT INTO messages_fts(messages_fts, rowid, text_content) VALUES('delete', old.id, old.text_content);
-END;
-CREATE TRIGGER messages_au AFTER UPDATE ON messages BEGIN
-  INSERT INTO messages_fts(messages_fts, rowid, text_content) VALUES('delete', old.id, old.text_content);
-  INSERT INTO messages_fts(rowid, text_content) VALUES (new.id, new.text_content);
-END;
 CREATE TABLE IF NOT EXISTS "labels" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "color" varchar DEFAULT '#475569' NOT NULL /*application='ClaudeHistory'*/);
 CREATE UNIQUE INDEX "index_labels_on_lower_name" ON "labels" (LOWER(name)) /*application='ClaudeHistory'*/;
 CREATE TABLE IF NOT EXISTS "conversation_labels" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "label_id" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_97fe12b0fc"
@@ -67,7 +49,38 @@ FOREIGN KEY ("blob_id")
 );
 CREATE UNIQUE INDEX "index_active_storage_variant_records_uniqueness" ON "active_storage_variant_records" ("blob_id", "variation_digest") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_projects_on_deleted_at" ON "projects" ("deleted_at") /*application='ClaudeHistory'*/;
+CREATE TABLE IF NOT EXISTS "messages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "uuid" varchar, "parent_uuid" varchar, "record_type" varchar NOT NULL, "role" varchar, "text_content" text, "raw" text, "timestamp" datetime(6), "position" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "model" varchar, "api_message_id" varchar, "input_tokens" integer, "output_tokens" integer, "cache_creation_tokens" integer, "cache_read_tokens" integer, "subagent_id" integer /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_7f927086d2"
+FOREIGN KEY ("conversation_id")
+  REFERENCES "conversations" ("id")
+);
+CREATE INDEX "index_messages_on_conversation_id" ON "messages" ("conversation_id") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_conversation_id_and_position" ON "messages" ("conversation_id", "position") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_conversation_id_and_uuid" ON "messages" ("conversation_id", "uuid") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_record_type" ON "messages" ("record_type") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_timestamp" ON "messages" ("timestamp") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_conversation_id_and_api_message_id" ON "messages" ("conversation_id", "api_message_id") /*application='ClaudeHistory'*/;
+CREATE TRIGGER messages_ai AFTER INSERT ON messages BEGIN
+  INSERT INTO messages_fts(rowid, text_content) VALUES (new.id, new.text_content);
+END;
+CREATE TRIGGER messages_ad AFTER DELETE ON messages BEGIN
+  INSERT INTO messages_fts(messages_fts, rowid, text_content) VALUES('delete', old.id, old.text_content);
+END;
+CREATE TRIGGER messages_au AFTER UPDATE ON messages BEGIN
+  INSERT INTO messages_fts(messages_fts, rowid, text_content) VALUES('delete', old.id, old.text_content);
+  INSERT INTO messages_fts(rowid, text_content) VALUES (new.id, new.text_content);
+END;
+CREATE TABLE IF NOT EXISTS "subagents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "agent_id" varchar NOT NULL, "agent_type" varchar, "description" varchar, "tool_use_id" varchar, "file_path" varchar NOT NULL, "file_mtime" datetime(6), "file_size" integer, "started_at" datetime(6), "last_activity_at" datetime(6), "message_count" integer DEFAULT 0 NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_103328a896"
+FOREIGN KEY ("conversation_id")
+  REFERENCES "conversations" ("id")
+);
+CREATE INDEX "index_subagents_on_conversation_id" ON "subagents" ("conversation_id") /*application='ClaudeHistory'*/;
+CREATE UNIQUE INDEX "index_subagents_on_file_path" ON "subagents" ("file_path") /*application='ClaudeHistory'*/;
+CREATE UNIQUE INDEX "index_subagents_on_conversation_id_and_agent_id" ON "subagents" ("conversation_id", "agent_id") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_subagents_on_tool_use_id" ON "subagents" ("tool_use_id") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_subagent_id" ON "messages" ("subagent_id") /*application='ClaudeHistory'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20261109150000'),
+('20261109120000'),
 ('20260418130000'),
 ('20260418100001'),
 ('20260418100000'),
