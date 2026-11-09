@@ -149,6 +149,100 @@
   <% end %>
 </div>
 
+<%# Subagents %>
+<div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+  <h2 class="text-lg font-semibold tracking-tight">Subagents</h2>
+  <span class="text-xs text-muted-foreground">Spawns come from Agent tool calls · tokens only from subagent transcripts still on disk</span>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+  <% sessions_share = @stats.sessions_count.zero? ? nil : @stats.sessions_with_spawns_count.to_f / @stats.sessions_count %>
+  <% [
+       [ "Spawned", number_with_delimiter(@stats.spawn_count), change_badge(@stats.spawn_count, @stats.previous_spawn_count) ],
+       [ "In background", number_with_delimiter(@stats.background_spawn_count),
+         content_tag(:span, "#{percent(@stats.spawn_count.zero? ? nil : @stats.background_spawn_count.to_f / @stats.spawn_count)} of spawns", class: "text-xs text-muted-foreground") ],
+       [ "Sessions delegating", number_with_delimiter(@stats.sessions_with_spawns_count),
+         content_tag(:span, "#{percent(sessions_share)} of #{number_with_delimiter(@stats.sessions_count)} sessions", class: "text-xs text-muted-foreground") ],
+       [ "Subagent tokens", compact_number(@stats.subagent_totals.total_tokens),
+         content_tag(:span, "#{percent(@stats.subagent_token_share)} of all tokens", class: "text-xs text-muted-foreground") ]
+     ].each do |label, value, foot| %>
+    <div class="<%= card %> p-4">
+      <div class="text-xs uppercase tracking-wide text-muted-foreground"><%= label %></div>
+      <div class="text-2xl font-semibold tabular-nums mt-1"><%= value %></div>
+      <div class="mt-1"><%= foot %></div>
+    </div>
+  <% end %>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-3 mb-6">
+  <div class="<%= card %> overflow-hidden">
+    <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Spawns by type</div>
+    <% by_type = @stats.spawns_by_type %>
+    <% if by_type.empty? %>
+      <div class="p-6 text-center text-sm text-muted-foreground">No subagents spawned.</div>
+    <% else %>
+      <% type_max = by_type.map(&:last).max %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-border tabular-nums">
+          <% by_type.each do |type, count| %>
+            <tr>
+              <td class="px-4 py-2 font-mono text-xs w-1/2"><%= type %></td>
+              <td class="px-4 py-2 w-1/2">
+                <div class="flex items-center gap-2">
+                  <div class="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                    <div class="h-full bg-primary/70" style="width: <%= (count * 100.0 / type_max).round(1) %>%"></div>
+                  </div>
+                  <span class="text-xs w-8 text-right"><%= count %></span>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="<%= card %> overflow-hidden">
+    <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Subagent tokens by type</div>
+    <% usage = @stats.subagent_usage_by_type %>
+    <% if usage.empty? %>
+      <div class="p-6 text-center text-sm text-muted-foreground">No subagent transcripts in this period.</div>
+    <% else %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-border tabular-nums">
+          <% usage.each do |row| %>
+            <tr>
+              <td class="px-4 py-2 font-mono text-xs"><%= row[:agent_type] %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground whitespace-nowrap"><%= number_with_delimiter(row[:totals].calls) %> calls</td>
+              <td class="px-4 py-2 text-right font-medium whitespace-nowrap" title="<%= compact_number(row[:totals].output_tokens) %> output"><%= compact_number(row[:totals].total_tokens) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="<%= card %> overflow-hidden">
+    <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Most delegating sessions</div>
+    <% delegators = @stats.top_spawning_conversations %>
+    <% if delegators.empty? %>
+      <div class="p-6 text-center text-sm text-muted-foreground">Nothing yet.</div>
+    <% else %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-border tabular-nums">
+          <% delegators.each do |row| %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2 truncate max-w-0 w-full">
+                <%= link_to row[:conversation].display_title, conversation_path(row[:conversation]), class: "hover:text-primary", title: row[:conversation].project.name %>
+              </td>
+              <td class="px-4 py-2 text-right whitespace-nowrap"><%= row[:spawns] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>
+
 <div class="grid lg:grid-cols-2 gap-6 mb-6">
   <%# Top projects %>
   <div>

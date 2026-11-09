@@ -70,4 +70,53 @@ class UsageStatsTest < ActiveSupport::TestCase
   test "unknown period falls back to week" do
     assert_equal "week", UsageStats.new(period: "decade").period
   end
+
+  def add_spawn(at:, conv: @conv, type: nil, background: nil)
+    input = { "description" => "d", "prompt" => "p" }
+    input["subagent_type"] = type if type
+    input["run_in_background"] = background unless background.nil?
+    Message.create!(conversation: conv, record_type: "assistant", role: "assistant", position: (@position += 1),
+                    timestamp: at, raw: { "message" => { "content" => [ { "type" => "tool_use", "name" => "Agent", "input" => input } ] } }.to_json)
+  end
+
+  test "counts subagent spawns by type, background and session" do
+    other = make_conversation
+    add_spawn(at: @now - 1.hour, type: "Explore")
+    add_spawn(at: @now - 1.hour, type: "Explore", background: true)
+    add_spawn(at: @now - 2.hours, conv: other)
+    add_spawn(at: @now - 30.hours)
+
+    stats = UsageStats.new(period: "day", now: @now)
+    assert_equal 3, stats.spawn_count
+    assert_equal 1, stats.previous_spawn_count
+    assert_equal 1, stats.background_spawn_count
+    assert_equal [ [ "Explore", 2 ], [ "general-purpose", 1 ] ], stats.spawns_by_type
+    assert_equal 2, stats.sessions_with_spawns_count
+    assert_equal [ @conv.id, other.id ], stats.top_spawning_conversations.map { |r| r[:conversation].id }
+  end
+
+  test "splits subagent token usage from the main thread" do
+    sub = Subagent.create!(conversation: @conv, agent_id: "a1", agent_type: "Explore", file_path: "/tmp/a1.jsonl")
+    add_usage(at: @now - 1.hour, output: 10)
+    m = add_usage(at: @now - 1.hour, output: 30)
+    m.update!(subagent_id: sub.id)
+    Message.create!(conversation: @conv, subagent: sub, record_type: "user", role: "user", position: (@position += 1),
+                    timestamp: @now - 1.hour, text_content: "subagent prompt", raw: "{}")
+
+    stats = UsageStats.new(period: "day", now: @now)
+    assert_equal 40, stats.totals.output_tokens
+    assert_equal 30, stats.subagent_totals.output_tokens
+    assert_in_delta 1131.0 / 2242, stats.subagent_token_share, 0.0001
+    assert_equal [ "Explore" ], stats.subagent_usage_by_type.map { |r| r[:agent_type] }
+    assert_equal 0, stats.prompts_count, "subagent prompts aren't counted as user prompts"
+  end
+
+  test "tool queries tolerate string content" do
+    add_user("plain string content", at: @now - 1.hour)
+    Message.create!(conversation: @conv, record_type: "assistant", role: "assistant", position: (@position += 1),
+                    timestamp: @now - 1.hour, raw: { "message" => { "content" => "just a string" } }.to_json)
+    stats = UsageStats.new(period: "day", now: @now)
+    assert_equal({}, stats.top_tools)
+    assert_equal 0, stats.spawn_count
+  end
 end

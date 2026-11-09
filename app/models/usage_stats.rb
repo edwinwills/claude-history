@@ -11,6 +11,18 @@ class UsageStats
   }.freeze
   DEFAULT_PERIOD = "week".freeze
 
+  # One row per content block. Guarded so string `content` (or odd records)
+  # yields no rows instead of a "malformed JSON" error from json_extract.
+  CONTENT_BLOCKS_JOIN = <<~SQL.squish.freeze
+    JOIN json_each(
+      CASE WHEN json_type(messages.raw, '$.message.content') = 'array'
+           THEN json_extract(messages.raw, '$.message.content') ELSE '[]' END
+    ) AS block
+  SQL
+
+  SPAWN_TOOLS = %w[Agent Task].freeze # "Task" is the older name of the Agent tool
+  DEFAULT_AGENT_TYPE = "general-purpose".freeze
+
   TOKEN_COLUMNS = %i[input_tokens output_tokens cache_creation_tokens cache_read_tokens].freeze
   TOTAL_SQL = "COALESCE(messages.input_tokens,0) + COALESCE(messages.output_tokens,0) + " \
               "COALESCE(messages.cache_creation_tokens,0) + COALESCE(messages.cache_read_tokens,0)".freeze
@@ -56,9 +68,11 @@ class UsageStats
     @previous_sessions_count ||= messages_in(previous_range).distinct.count(:conversation_id)
   end
 
-  # Human-typed user turns: excludes tool results that come back as user records.
+  # Human-typed user turns: excludes tool results that come back as user records
+  # and the prompts the main thread hands to subagents.
   def prompts_count
     @prompts_count ||= messages_in(range)
+      .main_thread
       .where(role: "user")
       .where("messages.text_content NOT LIKE '[tool_result]%'")
       .where("messages.text_content <> ''")
@@ -89,12 +103,54 @@ class UsageStats
   def top_tools(limit: 12)
     @top_tools ||= messages_in(range)
       .where(record_type: "assistant")
-      .joins("JOIN json_each(messages.raw, '$.message.content') AS block")
+      .joins(CONTENT_BLOCKS_JOIN)
       .where("json_extract(block.value, '$.type') = 'tool_use'")
       .group("json_extract(block.value, '$.name')")
       .order(Arel.sql("COUNT(*) DESC"))
       .limit(limit)
       .count
+  end
+
+  # --- Subagents -----------------------------------------------------------
+  # Spawns are counted from Agent/Task tool calls in main-thread transcripts, so
+  # they cover all history. Subagent token usage needs the subagent's own
+  # transcript, which Claude Code only keeps on disk for a while.
+
+  Spawn = Struct.new(:conversation_id, :agent_type, :background, keyword_init: true)
+
+  def spawns = @spawns ||= spawns_in(range)
+  def spawn_count = spawns.size
+  def previous_spawn_count = @previous_spawn_count ||= spawns_in(previous_range).size
+  def background_spawn_count = spawns.count(&:background)
+
+  def spawns_by_type
+    spawns.map(&:agent_type).tally.sort_by { |type, n| [ -n, type ] }
+  end
+
+  def sessions_with_spawns_count
+    spawns.map(&:conversation_id).uniq.size
+  end
+
+  def top_spawning_conversations(limit: 5)
+    counts = spawns.map(&:conversation_id).tally.sort_by { |_, n| -n }.first(limit)
+    conversations = Conversation.where(id: counts.map(&:first)).includes(:project).index_by(&:id)
+    counts.filter_map { |id, n| conversations[id] && { conversation: conversations[id], spawns: n } }
+  end
+
+  def subagent_totals
+    @subagent_totals ||= sum_totals(usage_in(range).where.not(subagent_id: nil))
+  end
+
+  # Fraction of all tokens in the window spent inside subagents.
+  def subagent_token_share
+    totals.total_tokens.zero? ? nil : subagent_totals.total_tokens.to_f / totals.total_tokens
+  end
+
+  def subagent_usage_by_type
+    @subagent_usage_by_type ||= grouped(
+      usage_in(range).where.not(subagent_id: nil).joins(:subagent),
+      "COALESCE(subagents.agent_type, '#{DEFAULT_AGENT_TYPE}')"
+    ).map { |type, totals| { agent_type: type, totals: totals } }
   end
 
   def buckets
@@ -147,8 +203,29 @@ class UsageStats
     messages_in(window).where.not(output_tokens: nil)
   end
 
-  def totals_for(window)
-    row = usage_in(window).pick(
+  def spawns_in(window)
+    messages_in(window)
+      .main_thread
+      .where(record_type: "assistant")
+      .joins(CONTENT_BLOCKS_JOIN)
+      .where("json_extract(block.value, '$.type') = 'tool_use'")
+      .where("json_extract(block.value, '$.name') IN (?)", SPAWN_TOOLS)
+      .pluck(
+        Arel.sql("messages.conversation_id"),
+        Arel.sql("json_extract(block.value, '$.input.subagent_type')"),
+        Arel.sql("json_extract(block.value, '$.input.run_in_background')")
+      )
+      .map do |conversation_id, type, background|
+        Spawn.new(conversation_id: conversation_id,
+                  agent_type: type.presence || DEFAULT_AGENT_TYPE,
+                  background: [ 1, true, "true" ].include?(background))
+      end
+  end
+
+  def totals_for(window) = sum_totals(usage_in(window))
+
+  def sum_totals(scope)
+    row = scope.pick(
       Arel.sql("COUNT(*)"),
       *TOKEN_COLUMNS.map { |c| Arel.sql("COALESCE(SUM(messages.#{c}),0)") }
     )

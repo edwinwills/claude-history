@@ -1,5 +1,8 @@
 class Message < ApplicationRecord
   belongs_to :conversation
+  belongs_to :subagent, optional: true
+
+  scope :main_thread, -> { where(subagent_id: nil) }
 
   scope :ordered, -> { order(:position) }
 

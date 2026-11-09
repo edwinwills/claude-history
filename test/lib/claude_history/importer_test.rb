@@ -150,4 +150,75 @@ class ClaudeHistory::ImporterTest < ActiveSupport::TestCase
       assert_nil Conversation.find_by(session_id: sid).messages.find_by(record_type: "user").model
     end
   end
+
+  def write_subagent(root, cwd, session_id, agent_id, records, meta: nil)
+    encoded = cwd.sub(/\A\//, "-").tr("/", "-")
+    dir = File.join(root, encoded, session_id, "subagents")
+    FileUtils.mkdir_p(dir)
+    path = File.join(dir, "agent-#{agent_id}.jsonl")
+    File.open(path, "w") { |f| records.each { |r| f.puts(r.to_json) } }
+    File.write(File.join(dir, "agent-#{agent_id}.meta.json"), meta.to_json) if meta
+    path
+  end
+
+  def subagent_records(cwd, session_id, agent_id)
+    ts = Time.current.iso8601(6)
+    usage = { "input_tokens" => 1, "output_tokens" => 50, "cache_creation_input_tokens" => 0, "cache_read_input_tokens" => 0 }
+    [
+      { "type" => "user", "uuid" => "su1", "isSidechain" => true, "agentId" => agent_id, "sessionId" => session_id,
+        "cwd" => cwd, "timestamp" => ts, "message" => { "role" => "user", "content" => "find the thing" } },
+      { "type" => "assistant", "uuid" => "sa1", "isSidechain" => true, "agentId" => agent_id, "sessionId" => session_id,
+        "cwd" => cwd, "timestamp" => ts,
+        "message" => { "id" => "msg_sub", "model" => "claude-haiku-5-5", "role" => "assistant", "usage" => usage,
+                       "content" => [ { "type" => "text", "text" => "found it" } ] } },
+      { "type" => "assistant", "uuid" => "sa2", "isSidechain" => true, "agentId" => agent_id, "sessionId" => session_id,
+        "cwd" => cwd, "timestamp" => ts,
+        "message" => { "id" => "msg_sub", "model" => "claude-haiku-5-5", "role" => "assistant", "usage" => usage,
+                       "content" => [ { "type" => "tool_use", "id" => "t1", "name" => "Read", "input" => {} } ] } }
+    ]
+  end
+
+  test "imports subagent transcripts under the parent conversation" do
+    Dir.mktmpdir do |root|
+      cwd = "/Users/test/code/agents"
+      sid = "44444444-4444-4444-4444-444444444444"
+      write_session(root, cwd, sid, basic_records(cwd, sid))
+      write_subagent(root, cwd, sid, "abc123", subagent_records(cwd, sid, "abc123"),
+                     meta: { "agentType" => "Explore", "description" => "Find the thing", "toolUseId" => "toolu_1" })
+
+      summary = ClaudeHistory::Importer.run(root: root, logger: Logger.new(IO::NULL))
+      assert_equal 1, summary.subagents
+      assert_equal 0, summary.errors
+
+      conv = Conversation.find_by(session_id: sid)
+      sub = conv.subagents.sole
+      assert_equal [ "abc123", "Explore", "Find the thing", "toolu_1", 3 ],
+                   [ sub.agent_id, sub.agent_type, sub.description, sub.tool_use_id, sub.message_count ]
+      assert_equal 3, sub.messages.count
+      assert_equal [ nil, 50 ], sub.messages.where(record_type: "assistant").map(&:output_tokens)
+      assert_equal 3, conv.messages.count, "main-thread association excludes subagent messages"
+
+      # Re-importing the parent session must not wipe subagent messages.
+      FileUtils.touch(Dir.glob(File.join(root, "*", "#{sid}.jsonl")).first, mtime: Time.now + 60)
+      summary = ClaudeHistory::Importer.run(root: root, logger: Logger.new(IO::NULL))
+      assert_equal 1, summary.updated
+      assert_equal 0, summary.subagents, "unchanged subagent file is skipped"
+      assert_equal 3, sub.messages.count
+    end
+  end
+
+  test "skips subagents whose parent conversation is trashed" do
+    Dir.mktmpdir do |root|
+      cwd = "/Users/test/code/agents"
+      sid = "55555555-5555-5555-5555-555555555555"
+      write_session(root, cwd, sid, basic_records(cwd, sid))
+      ClaudeHistory::Importer.run(root: root, logger: Logger.new(IO::NULL))
+      Conversation.find_by(session_id: sid).soft_delete!
+
+      write_subagent(root, cwd, sid, "def456", subagent_records(cwd, sid, "def456"))
+      summary = ClaudeHistory::Importer.run(root: root, logger: Logger.new(IO::NULL))
+      assert_equal 0, summary.subagents
+      assert_equal 0, Subagent.count
+    end
+  end
 end

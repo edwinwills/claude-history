@@ -50,23 +50,8 @@
   </div>
 <% end %>
 
-<div class="flex flex-col gap-3">
-  <% @messages.each do |message| %>
-    <% is_user = message.role == 'user' %>
-    <div class="flex <%= is_user ? 'justify-end' : 'justify-start' %>" id="msg-<%= message.uuid %>">
-      <div class="max-w-3xl w-fit">
-        <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1 <%= 'justify-end' if is_user %>">
-          <span class="uppercase tracking-wide"><%= message.role %></span>
-          <span><%= message.timestamp&.strftime("%H:%M:%S") %></span>
-        </div>
-        <div class="rounded-lg px-4 py-3 border <%= is_user ? 'bg-primary/10 border-primary/30' : 'bg-card border-border' %>">
-          <div class="markdown-body text-sm">
-            <% message.content_blocks.each do |block| %>
-              <%= render "conversations/block", block: block %>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    </div>
-  <% end %>
-</div>
+<% if @subagents.any? %>
+  <%= render "conversations/subagents", conversation: @conversation, subagents: @subagents, subagent_tokens: @subagent_tokens %>
+<% end %>
+
+<%= render "conversations/messages", messages: @messages %>
