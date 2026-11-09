@@ -1,0 +1,340 @@
+<% content_for :title, "Stats — Claude History" %>
+<% totals = @stats.totals %>
+<% prev = @stats.previous_totals %>
+<% segments = [
+     [ :cache_read_tokens,     "Cache read",  "bg-sky-400/70" ],
+     [ :cache_creation_tokens, "Cache write", "bg-violet-500/80" ],
+     [ :input_tokens,          "Input",       "bg-amber-500" ],
+     [ :output_tokens,         "Output",      "bg-emerald-500" ]
+   ] %>
+<% card = "rounded-lg border border-border bg-card text-card-foreground" %>
+<% th = "font-medium px-4 py-3" %>
+
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Stats</span>
+</nav>
+
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Stats</h1>
+    <p class="text-sm text-muted-foreground"><%= @stats.label %> · token usage is from Claude Code sessions only</p>
+  </div>
+  <div class="inline-flex items-center rounded-md border border-border bg-background h-9 p-0.5" role="group" aria-label="Period">
+    <% { "day" => "Day", "week" => "Week", "month" => "Month" }.each do |value, label| %>
+      <%= link_to label, stats_path(period: value),
+            "aria-current": (@stats.period == value ? "page" : nil),
+            class: "inline-flex items-center justify-center h-8 px-3 rounded text-sm font-medium transition-colors #{@stats.period == value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}" %>
+    <% end %>
+  </div>
+</div>
+
+<%# Headline tiles %>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <% [
+       [ "Total tokens", compact_number(totals.total_tokens), number_with_delimiter(totals.total_tokens), change_badge(totals.total_tokens, prev.total_tokens) ],
+       [ "Output tokens", compact_number(totals.output_tokens), number_with_delimiter(totals.output_tokens), change_badge(totals.output_tokens, prev.output_tokens) ],
+       [ "API calls", number_with_delimiter(totals.calls), nil, change_badge(totals.calls, prev.calls) ],
+       [ "Sessions", number_with_delimiter(@stats.sessions_count), nil, change_badge(@stats.sessions_count, @stats.previous_sessions_count) ]
+     ].each do |label, value, title, badge| %>
+    <div class="<%= card %> p-4">
+      <div class="text-xs uppercase tracking-wide text-muted-foreground"><%= label %></div>
+      <div class="text-2xl font-semibold tabular-nums mt-1" title="<%= title %>"><%= value %></div>
+      <div class="mt-1"><%= badge %></div>
+    </div>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <% [
+       [ "Cache hit rate", percent(totals.cache_hit_rate), "Share of prompt tokens read from cache" ],
+       [ "Prompts sent", number_with_delimiter(@stats.prompts_count), "User turns, excluding tool results" ],
+       [ "Active projects", number_with_delimiter(@stats.projects_count), "Projects with activity in this period" ],
+       [ "Avg output / call", totals.calls.zero? ? "—" : number_with_delimiter(totals.output_tokens / totals.calls), "Output tokens per API response" ]
+     ].each do |label, value, hint| %>
+    <div class="<%= card %> p-4">
+      <div class="text-xs uppercase tracking-wide text-muted-foreground"><%= label %></div>
+      <div class="text-lg font-semibold tabular-nums mt-1"><%= value %></div>
+      <div class="text-xs text-muted-foreground mt-0.5"><%= hint %></div>
+    </div>
+  <% end %>
+</div>
+
+<%# Token breakdown + time series %>
+<div class="<%= card %> p-4 mb-6">
+  <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+    <h2 class="text-lg font-semibold tracking-tight">Tokens over time</h2>
+    <div class="flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <% segments.each do |col, label, color| %>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="inline-block h-2.5 w-2.5 rounded-sm <%= color %>"></span>
+          <%= label %> <span class="tabular-nums text-foreground"><%= compact_number(totals[col]) %></span>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <% max = @stats.buckets.map(&:total_tokens).max.to_i %>
+  <% if max.zero? %>
+    <div class="h-48 flex items-center justify-center text-sm text-muted-foreground">No Claude Code activity in this period. Try syncing or picking a longer period.</div>
+  <% else %>
+    <div class="flex items-end gap-px sm:gap-1 h-48" role="img" aria-label="Tokens per <%= @stats.period == 'day' ? 'hour' : 'day' %>">
+      <% @stats.buckets.each do |b| %>
+        <% tip = "#{b.starts_at.strftime(@stats.bucket_format)} — #{number_with_delimiter(b.total_tokens)} tokens, #{b.calls} calls\n" +
+                 segments.map { |col, label, _| "#{label}: #{number_with_delimiter(b[col])}" }.join("\n") %>
+        <div class="flex-1 h-full flex flex-col justify-end group" title="<%= tip %>">
+          <div class="w-full flex flex-col-reverse rounded-t-sm overflow-hidden group-hover:opacity-80" style="height: <%= (b.total_tokens * 100.0 / max).round(2) %>%">
+            <% segments.each do |col, _, color| %>
+              <% next if b[col].zero? %>
+              <div class="<%= color %> w-full" style="height: <%= (b[col] * 100.0 / b.total_tokens).round(2) %>%"></div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <div class="flex justify-between text-[11px] text-muted-foreground mt-1.5 tabular-nums">
+      <span><%= @stats.buckets.first.starts_at.strftime(@stats.bucket_format) %></span>
+      <span>peak <%= compact_number(max) %></span>
+      <span><%= @stats.buckets.last.starts_at.strftime(@stats.bucket_format) %></span>
+    </div>
+  <% end %>
+</div>
+
+<%# Models %>
+<h2 class="text-lg font-semibold tracking-tight mb-2">Models</h2>
+<div class="<%= card %> overflow-hidden mb-6">
+  <% if @stats.by_model.empty? %>
+    <div class="p-6 text-center text-sm text-muted-foreground">No model usage in this period.</div>
+  <% else %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left <%= th %>">Model</th>
+            <th class="text-right <%= th %>">Calls</th>
+            <th class="text-right <%= th %>">Input</th>
+            <th class="text-right <%= th %>">Output</th>
+            <th class="text-right <%= th %>">Cache read</th>
+            <th class="text-right <%= th %>">Cache write</th>
+            <th class="text-right <%= th %>">Total</th>
+            <th class="text-left <%= th %> w-40">Share</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border tabular-nums">
+          <% @stats.by_model.each do |row| %>
+            <% t = row[:totals] %>
+            <% share = totals.total_tokens.zero? ? 0 : t.total_tokens.to_f / totals.total_tokens %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2 font-mono text-xs"><%= row[:model] %></td>
+              <td class="px-4 py-2 text-right"><%= number_with_delimiter(t.calls) %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= compact_number(t.input_tokens) %></td>
+              <td class="px-4 py-2 text-right"><%= compact_number(t.output_tokens) %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= compact_number(t.cache_read_tokens) %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= compact_number(t.cache_creation_tokens) %></td>
+              <td class="px-4 py-2 text-right font-medium"><%= compact_number(t.total_tokens) %></td>
+              <td class="px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <div class="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                    <div class="h-full bg-primary" style="width: <%= (share * 100).round(1) %>%"></div>
+                  </div>
+                  <span class="text-xs text-muted-foreground w-9 text-right"><%= percent(share) %></span>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>
+
+<%# Subagents %>
+<div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+  <h2 class="text-lg font-semibold tracking-tight">Subagents</h2>
+  <span class="text-xs text-muted-foreground">Spawns come from Agent tool calls · tokens only from subagent transcripts still on disk</span>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+  <% sessions_share = @stats.sessions_count.zero? ? nil : @stats.sessions_with_spawns_count.to_f / @stats.sessions_count %>
+  <% [
+       [ "Spawned", number_with_delimiter(@stats.spawn_count), change_badge(@stats.spawn_count, @stats.previous_spawn_count) ],
+       [ "In background", number_with_delimiter(@stats.background_spawn_count),
+         content_tag(:span, "#{percent(@stats.spawn_count.zero? ? nil : @stats.background_spawn_count.to_f / @stats.spawn_count)} of spawns", class: "text-xs text-muted-foreground") ],
+       [ "Sessions delegating", number_with_delimiter(@stats.sessions_with_spawns_count),
+         content_tag(:span, "#{percent(sessions_share)} of #{number_with_delimiter(@stats.sessions_count)} sessions", class: "text-xs text-muted-foreground") ],
+       [ "Subagent tokens", compact_number(@stats.subagent_totals.total_tokens),
+         content_tag(:span, "#{percent(@stats.subagent_token_share)} of all tokens", class: "text-xs text-muted-foreground") ]
+     ].each do |label, value, foot| %>
+    <div class="<%= card %> p-4">
+      <div class="text-xs uppercase tracking-wide text-muted-foreground"><%= label %></div>
+      <div class="text-2xl font-semibold tabular-nums mt-1"><%= value %></div>
+      <div class="mt-1"><%= foot %></div>
+    </div>
+  <% end %>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-3 mb-6">
+  <div class="<%= card %> overflow-hidden">
+    <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Spawns by type</div>
+    <% by_type = @stats.spawns_by_type %>
+    <% if by_type.empty? %>
+      <div class="p-6 text-center text-sm text-muted-foreground">No subagents spawned.</div>
+    <% else %>
+      <% type_max = by_type.map(&:last).max %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-border tabular-nums">
+          <% by_type.each do |type, count| %>
+            <tr>
+              <td class="px-4 py-2 font-mono text-xs w-1/2"><%= type %></td>
+              <td class="px-4 py-2 w-1/2">
+                <div class="flex items-center gap-2">
+                  <div class="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                    <div class="h-full bg-primary/70" style="width: <%= (count * 100.0 / type_max).round(1) %>%"></div>
+                  </div>
+                  <span class="text-xs w-8 text-right"><%= count %></span>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="<%= card %> overflow-hidden">
+    <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Subagent tokens by type</div>
+    <% usage = @stats.subagent_usage_by_type %>
+    <% if usage.empty? %>
+      <div class="p-6 text-center text-sm text-muted-foreground">No subagent transcripts in this period.</div>
+    <% else %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-border tabular-nums">
+          <% usage.each do |row| %>
+            <tr>
+              <td class="px-4 py-2 font-mono text-xs"><%= row[:agent_type] %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground whitespace-nowrap"><%= number_with_delimiter(row[:totals].calls) %> calls</td>
+              <td class="px-4 py-2 text-right font-medium whitespace-nowrap" title="<%= compact_number(row[:totals].output_tokens) %> output"><%= compact_number(row[:totals].total_tokens) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="<%= card %> overflow-hidden">
+    <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Most delegating sessions</div>
+    <% delegators = @stats.top_spawning_conversations %>
+    <% if delegators.empty? %>
+      <div class="p-6 text-center text-sm text-muted-foreground">Nothing yet.</div>
+    <% else %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-border tabular-nums">
+          <% delegators.each do |row| %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2 truncate max-w-0 w-full">
+                <%= link_to row[:conversation].display_title, conversation_path(row[:conversation]), class: "hover:text-primary", title: row[:conversation].project.name %>
+              </td>
+              <td class="px-4 py-2 text-right whitespace-nowrap"><%= row[:spawns] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6 mb-6">
+  <%# Top projects %>
+  <div>
+    <h2 class="text-lg font-semibold tracking-tight mb-2">Top projects</h2>
+    <div class="<%= card %> overflow-hidden">
+      <% rows = @stats.top_projects %>
+      <% if rows.empty? %>
+        <div class="p-6 text-center text-sm text-muted-foreground">Nothing yet.</div>
+      <% else %>
+        <table class="w-full text-sm">
+          <tbody class="divide-y divide-border tabular-nums">
+            <% rows.each do |row| %>
+              <tr class="hover:bg-muted/40">
+                <td class="px-4 py-2 truncate max-w-0 w-full">
+                  <% if row[:project] %>
+                    <%= link_to row[:project].name, project_path(row[:project]), class: "hover:text-primary", title: row[:project].path %>
+                  <% else %>
+                    <span class="text-muted-foreground">(unknown)</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-2 text-right text-muted-foreground whitespace-nowrap"><%= number_with_delimiter(row[:totals].calls) %> calls</td>
+                <td class="px-4 py-2 text-right font-medium whitespace-nowrap"><%= compact_number(row[:totals].total_tokens) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Top tools %>
+  <div>
+    <h2 class="text-lg font-semibold tracking-tight mb-2">Top tools</h2>
+    <div class="<%= card %> overflow-hidden">
+      <% tools = @stats.top_tools %>
+      <% if tools.empty? %>
+        <div class="p-6 text-center text-sm text-muted-foreground">No tool calls in this period.</div>
+      <% else %>
+        <% tool_max = tools.values.max %>
+        <table class="w-full text-sm">
+          <tbody class="divide-y divide-border tabular-nums">
+            <% tools.each do |name, count| %>
+              <tr class="hover:bg-muted/40">
+                <td class="px-4 py-2 font-mono text-xs truncate max-w-0 w-1/2" title="<%= name %>"><%= name %></td>
+                <td class="px-4 py-2 w-1/2">
+                  <div class="flex items-center gap-2">
+                    <div class="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                      <div class="h-full bg-primary/70" style="width: <%= (count * 100.0 / tool_max).round(1) %>%"></div>
+                    </div>
+                    <span class="text-xs w-12 text-right"><%= number_with_delimiter(count) %></span>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# Heaviest conversations %>
+<h2 class="text-lg font-semibold tracking-tight mb-2">Heaviest conversations</h2>
+<div class="<%= card %> overflow-hidden">
+  <% convs = @stats.top_conversations %>
+  <% if convs.empty? %>
+    <div class="p-6 text-center text-sm text-muted-foreground">Nothing yet.</div>
+  <% else %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left <%= th %>">Conversation</th>
+            <th class="text-left <%= th %>">Project</th>
+            <th class="text-right <%= th %>">Calls</th>
+            <th class="text-right <%= th %>">Output</th>
+            <th class="text-right <%= th %>">Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border tabular-nums">
+          <% convs.each do |row| %>
+            <% c = row[:conversation] %>
+            <tr class="hover:bg-muted/40">
+              <td class="px-4 py-2"><%= link_to c.display_title, conversation_path(c), class: "hover:text-primary" %></td>
+              <td class="px-4 py-2 text-muted-foreground"><%= c.project.name %></td>
+              <td class="px-4 py-2 text-right text-muted-foreground"><%= number_with_delimiter(row[:totals].calls) %></td>
+              <td class="px-4 py-2 text-right"><%= compact_number(row[:totals].output_tokens) %></td>
+              <td class="px-4 py-2 text-right font-medium"><%= compact_number(row[:totals].total_tokens) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

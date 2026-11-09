@@ -33,7 +33,12 @@
               <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide <%= message.role == 'user' ? 'bg-primary/20 text-primary' : 'bg-secondary text-secondary-foreground' %>"><%= message.role %></span>
                 <span><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>
-                <%= link_to "jump →", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "text-primary hover:underline ml-auto" %>
+                <% if message.subagent_id %>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-muted text-muted-foreground">subagent</span>
+                  <%= link_to "jump →", conversation_subagent_path(conversation, message.subagent_id, anchor: "msg-#{message.uuid}"), class: "text-primary hover:underline ml-auto" %>
+                <% else %>
+                  <%= link_to "jump →", conversation_path(conversation, anchor: "msg-#{message.uuid}"), class: "text-primary hover:underline ml-auto" %>
+                <% end %>
               </div>
               <div class="text-sm whitespace-pre-wrap break-words text-foreground"><%= snippet_around(message.text_content, @query) %></div>
             </div>
