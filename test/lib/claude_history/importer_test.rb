@@ -118,4 +118,36 @@ class ClaudeHistory::ImporterTest < ActiveSupport::TestCase
       assert_equal 2, conv.message_count
     end
   end
+
+  test "extracts model and token usage, keeping it on one record per API response" do
+    Dir.mktmpdir do |root|
+      cwd = "/Users/test/code/usage"
+      sid = "33333333-3333-3333-3333-333333333333"
+      usage = { "input_tokens" => 5, "output_tokens" => 40, "cache_creation_input_tokens" => 100, "cache_read_input_tokens" => 900 }
+      ts = Time.current.iso8601(6)
+      assistant = ->(uuid, block) {
+        { "type" => "assistant", "uuid" => uuid, "timestamp" => ts, "sessionId" => sid, "cwd" => cwd,
+          "message" => { "id" => "msg_1", "model" => "claude-opus-5-5", "role" => "assistant", "usage" => usage, "content" => [ block ] } }
+      }
+      records = [
+        { "type" => "user", "uuid" => "u1", "timestamp" => ts, "sessionId" => sid, "cwd" => cwd,
+          "message" => { "role" => "user", "content" => "hi" } },
+        assistant.call("a1", { "type" => "thinking", "thinking" => "hmm" }),
+        assistant.call("a2", { "type" => "text", "text" => "hello" }),
+        { "type" => "assistant", "uuid" => "a3", "timestamp" => ts, "sessionId" => sid, "cwd" => cwd,
+          "message" => { "id" => "msg_2", "model" => "<synthetic>", "role" => "assistant",
+                         "usage" => { "input_tokens" => 0, "output_tokens" => 0 }, "content" => [ { "type" => "text", "text" => "err" } ] } }
+      ]
+      write_session(root, cwd, sid, records)
+      ClaudeHistory::Importer.run(root: root, logger: Logger.new(IO::NULL))
+
+      msgs = Conversation.find_by(session_id: sid).messages.where(record_type: "assistant").to_a
+      assert_equal [ "claude-opus-5-5", "claude-opus-5-5", nil ], msgs.map(&:model)
+      assert_equal [ nil, 40, 0 ], msgs.map(&:output_tokens)
+      assert_equal 900, msgs[1].cache_read_tokens
+      assert_equal 100, msgs[1].cache_creation_tokens
+      assert_equal 5, msgs[1].input_tokens
+      assert_nil Conversation.find_by(session_id: sid).messages.find_by(record_type: "user").model
+    end
+  end
 end

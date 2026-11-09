@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   get "/search", to: "searches#show", as: :search
   post "/sync", to: "sync#create", as: :sync
   get "/trash", to: "trash#index", as: :trash
+  get "/stats", to: "stats#show", as: :stats
   resources :labels, only: [ :index, :create, :update, :destroy ]
   resources :desktop_imports, only: [ :index, :create ]
 end

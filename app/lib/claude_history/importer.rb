@@ -71,6 +71,7 @@ module ClaudeHistory
 
         conversation.messages.delete_all
         rows = records.each_with_index.map { |rec, i| message_attrs(conversation, rec, i) }
+        dedupe_usage!(rows)
         Message.insert_all(rows) if rows.any?
       end
 
@@ -142,7 +143,45 @@ module ClaudeHistory
         position: index,
         created_at: now,
         updated_at: now
+      }.merge(usage_attrs(record))
+    end
+
+    def usage_attrs(record)
+      return USAGE_BLANK unless record["type"] == "assistant"
+
+      message = record["message"].is_a?(Hash) ? record["message"] : {}
+      usage = message["usage"].is_a?(Hash) ? message["usage"] : {}
+      model = message["model"].presence
+      {
+        model: model == "<synthetic>" ? nil : model,
+        api_message_id: message["id"].presence,
+        input_tokens: usage["input_tokens"],
+        output_tokens: usage["output_tokens"],
+        cache_creation_tokens: usage["cache_creation_input_tokens"],
+        cache_read_tokens: usage["cache_read_input_tokens"]
       }
+    end
+
+    USAGE_BLANK = {
+      model: nil, api_message_id: nil, input_tokens: nil, output_tokens: nil,
+      cache_creation_tokens: nil, cache_read_tokens: nil
+    }.freeze
+    USAGE_TOKEN_KEYS = %i[input_tokens output_tokens cache_creation_tokens cache_read_tokens].freeze
+
+    # Claude Code writes one record per content block of an API response, each
+    # repeating that response's usage. Keep usage only on the last one so sums
+    # aren't inflated.
+    def dedupe_usage!(rows)
+      seen = Set.new
+      rows.reverse_each do |row|
+        id = row[:api_message_id]
+        next if id.nil?
+        if seen.include?(id)
+          USAGE_TOKEN_KEYS.each { |k| row[k] = nil }
+        else
+          seen << id
+        end
+      end
     end
 
     def parse_ts(value)

@@ -11,7 +11,7 @@ CREATE INDEX "index_conversations_on_project_id" ON "conversations" ("project_id
 CREATE UNIQUE INDEX "index_conversations_on_session_id" ON "conversations" ("session_id") /*application='ClaudeHistory'*/;
 CREATE UNIQUE INDEX "index_conversations_on_file_path" ON "conversations" ("file_path") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_conversations_on_last_activity_at" ON "conversations" ("last_activity_at") /*application='ClaudeHistory'*/;
-CREATE TABLE IF NOT EXISTS "messages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "uuid" varchar, "parent_uuid" varchar, "record_type" varchar NOT NULL, "role" varchar, "text_content" text, "raw" text, "timestamp" datetime(6), "position" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_7f927086d2"
+CREATE TABLE IF NOT EXISTS "messages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "conversation_id" integer NOT NULL, "uuid" varchar, "parent_uuid" varchar, "record_type" varchar NOT NULL, "role" varchar, "text_content" text, "raw" text, "timestamp" datetime(6), "position" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "model" varchar /*application='ClaudeHistory'*/, "api_message_id" varchar /*application='ClaudeHistory'*/, "input_tokens" integer /*application='ClaudeHistory'*/, "output_tokens" integer /*application='ClaudeHistory'*/, "cache_creation_tokens" integer /*application='ClaudeHistory'*/, "cache_read_tokens" integer /*application='ClaudeHistory'*/, CONSTRAINT "fk_rails_7f927086d2"
 FOREIGN KEY ("conversation_id")
   REFERENCES "conversations" ("id")
 );
@@ -67,7 +67,10 @@ FOREIGN KEY ("blob_id")
 );
 CREATE UNIQUE INDEX "index_active_storage_variant_records_uniqueness" ON "active_storage_variant_records" ("blob_id", "variation_digest") /*application='ClaudeHistory'*/;
 CREATE INDEX "index_projects_on_deleted_at" ON "projects" ("deleted_at") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_timestamp" ON "messages" ("timestamp") /*application='ClaudeHistory'*/;
+CREATE INDEX "index_messages_on_conversation_id_and_api_message_id" ON "messages" ("conversation_id", "api_message_id") /*application='ClaudeHistory'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20261109120000'),
 ('20260418130000'),
 ('20260418100001'),
 ('20260418100000'),
