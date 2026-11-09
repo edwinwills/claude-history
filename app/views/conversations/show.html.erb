@@ -33,7 +33,7 @@
   <div class="rounded-lg border border-border bg-card text-card-foreground p-4 mb-6" data-controller="clipboard">
     <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Resume in a new terminal</div>
     <div class="flex gap-2 items-center">
-      <code class="flex-1 font-mono text-sm bg-muted/40 rounded px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
+      <code class="flex-1 font-mono text-sm bg-muted/40 rounded-sm px-3 py-2 break-all" data-clipboard-target="source"><%= @conversation.resume_command %></code>
       <button type="button"
               class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               data-action="clipboard#copy" data-clipboard-target="button">Copy</button>

@@ -47,7 +47,7 @@
               <td class="px-4 py-2 text-right"><span class="text-muted-foreground"><%= c.message_count %></span></td>
               <td class="px-4 py-2">
                 <% if c.git_branch.present? %>
-                  <span class="inline-flex items-center rounded border border-border px-1.5 py-0.5 text-xs font-mono"><%= c.git_branch %></span>
+                  <span class="inline-flex items-center rounded-sm border border-border px-1.5 py-0.5 text-xs font-mono"><%= c.git_branch %></span>
                 <% else %>
                   <span class="text-muted-foreground">—</span>
                 <% end %>

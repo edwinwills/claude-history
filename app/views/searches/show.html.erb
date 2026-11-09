@@ -4,7 +4,7 @@
 
 <%= form_with url: search_path, method: :get, local: true, class: "flex gap-2 mb-6" do |f| %>
   <%= f.search_field :q, value: @query, placeholder: "Search all conversations…", autofocus: true,
-        class: "flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+        class: "flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring" %>
   <%= f.submit "Search",
         class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
 <% end %>
@@ -29,7 +29,7 @@
         </h2>
         <div class="flex flex-col gap-2 mt-2">
           <% messages.each do |message| %>
-            <div class="bg-muted/40 rounded p-2">
+            <div class="bg-muted/40 rounded-sm p-2">
               <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide <%= message.role == 'user' ? 'bg-primary/20 text-primary' : 'bg-secondary text-secondary-foreground' %>"><%= message.role %></span>
                 <span><%= message.timestamp&.strftime("%Y-%m-%d %H:%M") %></span>

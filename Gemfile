@@ -37,9 +37,6 @@ gem "kamal", require: false
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
 
-# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 2.0"
-
 # Markdown rendering for conversation text blocks
 gem "redcarpet", "~> 3.6"
 
@@ -47,7 +44,7 @@ gem "redcarpet", "~> 3.6"
 gem "rubyzip", "~> 3.4", require: "zip"
 
 # Tailwind + shadcn UI components
-gem "tailwindcss-rails", "~> 3.3"
+gem "tailwindcss-rails", "~> 4.6"
 gem "shadcn-ui"
 
 group :development, :test do

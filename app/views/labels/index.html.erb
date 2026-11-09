@@ -17,7 +17,7 @@
           placeholder: "New label name…",
           autocomplete: "off",
           required: true,
-          class: "flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+          class: "flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring" %>
     <%= f.hidden_field :color, value: Label::DEFAULT_COLOR %>
     <%= f.submit "Create label",
           class: "inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" %>
