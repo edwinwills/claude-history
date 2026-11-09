@@ -1,0 +1,18 @@
+<div class="rounded-lg border border-border bg-card text-card-foreground overflow-hidden mb-6">
+  <div class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Subagents (<%= subagents.size %>)</div>
+  <table class="w-full text-sm">
+    <tbody class="divide-y divide-border tabular-nums">
+      <% subagents.each do |subagent| %>
+        <tr class="hover:bg-muted/40">
+          <td class="px-4 py-2 w-full">
+            <%= link_to subagent.display_title, conversation_subagent_path(conversation, subagent), class: "hover:text-primary" %>
+          </td>
+          <td class="px-4 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap"><%= subagent.display_type %></td>
+          <td class="px-4 py-2 text-right text-muted-foreground whitespace-nowrap"><%= subagent.message_count %> msgs</td>
+          <td class="px-4 py-2 text-right whitespace-nowrap"><%= compact_number(subagent_tokens[subagent.id]) %> tokens</td>
+          <td class="px-4 py-2 text-right text-muted-foreground whitespace-nowrap"><%= subagent.started_at&.strftime("%H:%M") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -2,7 +2,9 @@ class Conversation < ApplicationRecord
   SOURCES = %w[code desktop].freeze
 
   belongs_to :project
-  has_many :messages, -> { order(:position) }, dependent: :destroy
+  # Main-thread messages only; subagent messages hang off #subagents.
+  has_many :messages, -> { where(subagent_id: nil).order(:position) }, dependent: :delete_all
+  has_many :subagents, -> { order(:started_at) }, dependent: :destroy
   has_many :conversation_labels, dependent: :destroy
   has_many :labels, through: :conversation_labels
 

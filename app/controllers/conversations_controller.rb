@@ -5,6 +5,10 @@ class ConversationsController < ApplicationController
     @conversation = Conversation.find(params[:id])
     @project = @conversation.project
     @messages = @conversation.display_messages.ordered
+    @subagents = @conversation.subagents.to_a
+    @subagent_tokens = Message.where(subagent_id: @subagents.map(&:id))
+      .group(:subagent_id).sum(Arel.sql(UsageStats::TOTAL_SQL))
+    @subagents_by_tool_use_id = @subagents.index_by(&:tool_use_id)
   end
 
   def title

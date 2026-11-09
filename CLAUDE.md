@@ -32,6 +32,11 @@ The app has **two ingestion sources**, both writing into the same `projects → 
 
 Soft-deleted conversations are **never** re-imported — both importers check `Conversation.with_deleted` and skip if `deleted_at` is set. This means deleting in the UI is sticky across resyncs, which is a core product promise.
 
+### Subagents and token usage
+Claude Code writes subagent transcripts to `<project>/<session_id>/subagents/agent-<id>.jsonl`, with a `.meta.json` alongside (agent type, description, `toolUseId`). The importer loads these after the main sessions into `Subagent` rows, and their messages are stored under the parent conversation with `subagent_id` set. `Conversation#messages` is scoped to the main thread (`subagent_id: nil`), so replacing a session's messages leaves subagent rows alone. Subagents of soft-deleted conversations are skipped.
+
+Assistant rows carry `model` and token columns pulled from `message.usage`. Claude Code repeats the same usage on every content-block record of one API response, so the importer keeps it only on the last record per `api_message_id` (`dedupe_usage!`), which makes plain SUMs correct. `UsageStats` powers `/stats`.
+
 ### Soft delete with default scope
 `Conversation` and `Project` both use `deleted_at` + `default_scope { where(deleted_at: nil) }`. To bypass, use the `with_deleted` / `deleted` scopes. The `/trash` page (`TrashController`) and `restore` member routes rely on this. When writing new queries that need to see deleted rows (e.g. importer dedup), remember to unscope.
 
@@ -39,6 +44,8 @@ Soft-deleted conversations are **never** re-imported — both importers check `C
 Messages are indexed in a SQLite FTS5 virtual table `messages_fts` with `porter unicode61` tokenization, kept in sync via AFTER INSERT/UPDATE/DELETE triggers (see `db/structure.sql` and the `create_messages_fts` migration). Search (`SearchesController`) queries against this table.
 
 There is a Rails footgun here that `lib/tasks/db_structure_fts.rake` works around: `db:schema:dump` emits the FTS5 shadow tables (`messages_fts_data`, `_idx`, `_docsize`, `_config`) into `structure.sql`, but those names are reserved by SQLite and `db:schema:load` then fails. The rake task hooks `db:schema:dump` to strip those lines after dump. **Do not remove this hook**, and if you add another FTS5 virtual table, the regex there will already cover its shadow tables.
+
+Never add a DB-level foreign key (or anything else that makes Rails' SQLite adapter copy and rebuild the table) to `messages` in a migration. The rebuild silently drops the `messages_ai/ad/au` triggers that keep `messages_fts` in sync. Use a plain indexed column instead, like `messages.subagent_id`.
 
 ### Models & relationships
 `Project` 1—N `Conversation` 1—N `Message`. `Conversation` N—N `Label` through `ConversationLabel`. `Conversation#resume_command` builds the `cd … && claude --resume <session_id>` shell snippet shown in the UI — this is **only** valid for `source: "code"` (returns nil for desktop conversations).

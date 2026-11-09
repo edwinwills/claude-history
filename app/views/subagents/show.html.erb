@@ -1,0 +1,23 @@
+<% content_for :title, "#{@subagent.display_title} — Claude History" %>
+
+<nav class="text-sm text-muted-foreground mb-2">
+  <%= link_to "Projects", root_path, class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <%= link_to @project.name, project_path(@project), class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <%= link_to @conversation.display_title.truncate(60), conversation_path(@conversation), class: "hover:text-foreground" %>
+  <span class="mx-1">/</span>
+  <span class="text-foreground">Subagent</span>
+</nav>
+
+<h1 class="text-2xl font-semibold tracking-tight mb-2"><%= @subagent.display_title %></h1>
+
+<div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
+  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-primary/10 text-primary"><%= @subagent.display_type %></span>
+  <span>Started: <%= @subagent.started_at&.strftime("%Y-%m-%d %H:%M") %></span>
+  <span>Messages: <%= @subagent.message_count %></span>
+  <span>Tokens: <%= number_with_delimiter(@tokens) %></span>
+  <span>Agent: <code class="font-mono text-foreground"><%= @subagent.agent_id %></code></span>
+</div>
+
+<%= render "conversations/messages", messages: @messages %>
