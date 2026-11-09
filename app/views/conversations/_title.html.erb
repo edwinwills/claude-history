@@ -14,8 +14,8 @@
             value: (conversation.custom_title.presence || conversation.display_title),
             autofocus: true,
             class: (variant == :inline ?
-              "flex h-8 rounded-md border border-input bg-background px-2 py-1 text-sm w-64 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" :
-              "flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 py-1 text-xl font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"),
+              "flex h-8 rounded-md border border-input bg-background px-2 py-1 text-sm w-64 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring" :
+              "flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 py-1 text-xl font-semibold shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"),
             data: { controller: "title-edit", action: "keydown.esc->title-edit#cancel" } %>
       <%= f.submit "Save",
             class: (variant == :inline ?

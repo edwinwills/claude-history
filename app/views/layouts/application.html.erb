@@ -26,13 +26,13 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="min-h-screen bg-background text-foreground font-sans antialiased">
-    <header class="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
+    <header class="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-sm">
       <div class="max-w-6xl mx-auto w-full flex gap-3 px-4 py-3 items-center">
         <%= link_to "Claude History", root_path, class: "text-lg font-semibold tracking-tight hover:text-primary" %>
         <%= form_with url: search_path, method: :get, local: true, class: "flex-1" do |f| %>
           <%= f.search_field :q, value: params[:q], placeholder: "Search all conversations…",
                 autocomplete: "off",
-                class: "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" %>
+                class: "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring" %>
         <% end %>
 
         <div class="inline-flex items-center rounded-md border border-border bg-background h-9 p-0.5" role="group" aria-label="Theme" data-controller="theme">
@@ -43,7 +43,7 @@
                     data-action="theme#select"
                     aria-label="<%= label %>"
                     title="<%= label %>"
-                    class="inline-flex items-center justify-center h-8 w-8 rounded text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-muted-foreground">
+                    class="inline-flex items-center justify-center h-8 w-8 rounded-sm text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-muted-foreground">
               <%= icon %>
             </button>
           <% end %>
