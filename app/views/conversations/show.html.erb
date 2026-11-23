@@ -54,4 +54,4 @@
   <%= render "conversations/subagents", conversation: @conversation, subagents: @subagents, subagent_tokens: @subagent_tokens %>
 <% end %>
 
-<%= render "conversations/messages", messages: @messages %>
+<%= render "conversations/messages", messages: @messages, conversation: @conversation %>

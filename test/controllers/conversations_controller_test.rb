@@ -12,6 +12,18 @@ class ConversationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /Hello World/
   end
 
+  test "show offers resume-from-here on code messages but not desktop ones" do
+    Message.create!(conversation: @conversation, uuid: "m1", record_type: "user", role: "user",
+                    raw: { message: { content: "hi" } }.to_json, position: 0)
+    get conversation_path(@conversation)
+    assert_select "form[action=?]", conversation_forks_path(@conversation, message_uuid: "m1")
+    assert_select "#fork-slot-m1"
+
+    @conversation.update!(source: "desktop")
+    get conversation_path(@conversation)
+    assert_select "#fork-slot-m1", count: 0
+  end
+
   test "show is 404 for a soft-deleted conversation" do
     @conversation.soft_delete!
     get conversation_path(@conversation)
