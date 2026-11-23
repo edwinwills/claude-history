@@ -37,6 +37,9 @@ Claude Code writes subagent transcripts to `<project>/<session_id>/subagents/age
 
 Assistant rows carry `model` and token columns pulled from `message.usage`. Claude Code repeats the same usage on every content-block record of one API response, so the importer keeps it only on the last record per `api_message_id` (`dedupe_usage!`), which makes plain SUMs correct. `UsageStats` powers `/stats`.
 
+### Resume from a message (session forks)
+"Resume from here" on a message (`SessionForksController` → `ClaudeHistory::SessionForker`) writes a truncated copy of the session JSONL next to the original in `~/.claude/projects/<project>/`. This is the one place the app writes into `~/.claude`. The copy holds only the `parentUuid` chain up to the end of that message's turn, with `sessionId` rewritten. The UI then shows `claude --resume <copy> --fork-session`. `--fork-session` keeps the copy untouched, so the link can be reused, and the copy's id is a UUIDv5 of the cut point, so repeat clicks reuse it. The CLI's own `--resume-session-at` is ignored outside `-p` mode, which is why we write a file instead. Copies are recorded in `session_forks`, and the importer skips those session ids so they don't show up as duplicate conversations.
+
 ### Soft delete with default scope
 `Conversation` and `Project` both use `deleted_at` + `default_scope { where(deleted_at: nil) }`. To bypass, use the `with_deleted` / `deleted` scopes. The `/trash` page (`TrashController`) and `restore` member routes rely on this. When writing new queries that need to see deleted rows (e.g. importer dedup), remember to unscope.
 

@@ -11,6 +11,7 @@ Rails.application.routes.draw do
     patch :restore, on: :member
     resources :labels, only: [ :create, :destroy ], controller: "conversation_labels"
     resources :subagents, only: [ :show ]
+    resources :forks, only: [ :create ], controller: "session_forks"
   end
   get "/search", to: "searches#show", as: :search
   post "/sync", to: "sync#create", as: :sync

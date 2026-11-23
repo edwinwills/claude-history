@@ -47,6 +47,12 @@ module ClaudeHistory
       session_id = File.basename(file, ".jsonl")
       mtime = File.mtime(file)
 
+      # Truncated copies written by SessionForker, not real sessions.
+      if SessionFork.exists?(session_id: session_id)
+        @summary.skipped += 1
+        return
+      end
+
       existing = Conversation.with_deleted.find_by(session_id: session_id)
       if existing&.deleted_at
         @summary.skipped += 1
