@@ -41,7 +41,7 @@ gem "thruster", require: false
 gem "redcarpet", "~> 3.6"
 
 # Reading claude.ai export ZIP files
-gem "rubyzip", "~> 3.4", require: "zip"
+gem "rubyzip", "~> 3.7", require: "zip"
 
 # Tailwind + shadcn UI components
 gem "tailwindcss-rails", "~> 4.6"
